@@ -1,0 +1,626 @@
+// ZuDe — skema database (REQUIREMENTS bagian 6)
+// Semua nominal disimpan sebagai BIGINT rupiah (tidak pernah float).
+// Tanggal transaksi disimpan sebagai DATE lokal Asia/Jakarta.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "foreignKeys"
+}
+
+enum Owner {
+  suami
+  istri
+  bersama
+}
+
+enum Beneficiary {
+  suami
+  istri
+  anak
+  keluarga
+}
+
+enum CycleMode {
+  husband_payday
+  wife_payday
+  manual
+}
+
+enum AccountType {
+  bank
+  ewallet
+  cash
+  credit_card
+  paylater
+  investment
+  receivable
+}
+
+enum CategoryKind {
+  income
+  expense
+}
+
+enum CategoryNature {
+  needs
+  wants
+  savings_debt
+}
+
+enum TxType {
+  income
+  expense
+  transfer
+  debt_payment
+  saving_deposit
+  adjustment
+}
+
+enum TxStatus {
+  planned
+  realized
+}
+
+enum Frequency {
+  daily
+  weekly
+  monthly
+  last_workday
+  yearly
+  every_n_months
+}
+
+enum RecurringMode {
+  auto
+  confirm
+}
+
+enum PeriodStatus {
+  open
+  closed
+  locked
+}
+
+enum TemplateTrigger {
+  salary
+  bonus
+  manual
+}
+
+enum DebtType {
+  kpr
+  kendaraan
+  kta
+  kartu_kredit
+  paylater
+  pinjol
+  keluarga
+  cicilan_barang
+  lainnya
+}
+
+enum InterestType {
+  flat
+  annuity
+  floating
+  zero
+}
+
+enum DebtStatus {
+  active
+  paid_off
+}
+
+enum ScheduleStatus {
+  unpaid
+  paid
+  late
+}
+
+enum ReceivableStatus {
+  open
+  paid
+}
+
+enum AssetType {
+  property
+  vehicle
+  gold
+  mutual_fund
+  stock
+  crypto
+  pension
+  other
+}
+
+model User {
+  id                Int          @id @default(autoincrement())
+  name              String       @db.VarChar(80)
+  email             String       @unique @db.VarChar(191)
+  passwordHash      String       @map("password_hash") @db.VarChar(255)
+  pinHash           String?      @map("pin_hash") @db.VarChar(255)
+  totpSecret        String?      @map("totp_secret") @db.VarChar(64)
+  totpEnabled       Boolean      @default(false) @map("totp_enabled")
+  theme             String       @default("system") @db.VarChar(10)
+  quietStart        String       @default("22:00") @map("quiet_start") @db.VarChar(5)
+  quietEnd          String       @default("06:00") @map("quiet_end") @db.VarChar(5)
+  hideAmountInPush  Boolean      @default(false) @map("hide_amount_in_push")
+  dailyReminderTime String       @default("20:00") @map("daily_reminder_time") @db.VarChar(5)
+  lastAccountId     Int?         @map("last_account_id")
+  sessionVersion    Int          @default(1) @map("session_version")
+  createdAt         DateTime     @default(now()) @map("created_at")
+
+  notifications     Notification[]
+  pushSubscriptions PushSubscription[]
+  notificationPrefs NotificationPref[]
+  auditLogs         AuditLog[]
+  createdTx         Transaction[]  @relation("txCreatedBy")
+  updatedTx         Transaction[]  @relation("txUpdatedBy")
+
+  @@map("users")
+}
+
+model HouseholdSettings {
+  id                  Int       @id @default(1)
+  husbandName         String    @default("Zuhri") @map("husband_name") @db.VarChar(40)
+  wifeName            String    @default("Devi") @map("wife_name") @db.VarChar(40)
+  cycleMode           CycleMode @default(manual) @map("cycle_mode")
+  cycleStartDay       Int       @default(1) @map("cycle_start_day")
+  husbandPayday       Int       @default(25) @map("husband_payday")
+  wifePayday          Int       @default(25) @map("wife_payday")
+  husbandSalary       BigInt    @default(0) @map("husband_salary")
+  wifeSalary          BigInt    @default(0) @map("wife_salary")
+  husbandSalaryAccountId Int?   @map("husband_salary_account_id")
+  wifeSalaryAccountId    Int?   @map("wife_salary_account_id")
+  husbandTemplateId   Int?      @map("husband_template_id")
+  wifeTemplateId      Int?      @map("wife_template_id")
+  // Jika tanggal jatuh di akhir pekan / 29–31: maju ke hari kerja sebelumnya
+  paydayWeekendRule   Boolean   @default(false) @map("payday_weekend_rule")
+  currency            String    @default("IDR") @db.VarChar(3)
+  bigExpenseThreshold BigInt    @default(2000000) @map("big_expense_threshold")
+  emergencyMonths     Int       @default(6) @map("emergency_months")
+  ratioNeeds          Int       @default(50) @map("ratio_needs")
+  ratioWants          Int       @default(30) @map("ratio_wants")
+  ratioSavings        Int       @default(20) @map("ratio_savings")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  @@map("household_settings")
+}
+
+model Account {
+  id                Int         @id @default(autoincrement())
+  name              String      @db.VarChar(80)
+  type              AccountType
+  owner             Owner
+  openingBalance    BigInt      @default(0) @map("opening_balance")
+  openingDate       DateTime    @map("opening_date") @db.Date
+  isArchived        Boolean     @default(false) @map("is_archived")
+  includeInNetworth Boolean     @default(true) @map("include_in_networth")
+  creditLimit       BigInt?     @map("credit_limit")
+  statementDay      Int?        @map("statement_day")
+  dueDay            Int?        @map("due_day")
+  color             String      @default("#14B8A6") @db.VarChar(9)
+  icon              String      @default("wallet") @db.VarChar(32)
+  sortOrder         Int         @default(0) @map("sort_order")
+  createdAt         DateTime    @default(now()) @map("created_at")
+
+  transactions   Transaction[] @relation("txAccount")
+  incomingTx     Transaction[] @relation("txToAccount")
+  goals          Goal[]
+  debts          Debt[]
+  sinkingFunds   SinkingFund[]
+
+  @@map("accounts")
+}
+
+model Category {
+  id         Int             @id @default(autoincrement())
+  parentId   Int?            @map("parent_id")
+  name       String          @db.VarChar(80)
+  kind       CategoryKind
+  nature     CategoryNature?
+  icon       String          @default("circle") @db.VarChar(32)
+  color      String          @default("#94A3B8") @db.VarChar(9)
+  isArchived Boolean         @default(false) @map("is_archived")
+  sortOrder  Int             @default(0) @map("sort_order")
+  systemKey  String?         @unique @map("system_key") @db.VarChar(40)
+
+  parent       Category?          @relation("catTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children     Category[]         @relation("catTree")
+  splits       TransactionSplit[]
+  budgets      Budget[]
+  sinkingFunds SinkingFund[]
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Transaction {
+  id               Int          @id @default(autoincrement())
+  date             DateTime     @db.Date
+  time             String       @default("00:00") @db.VarChar(5)
+  type             TxType
+  accountId        Int          @map("account_id")
+  toAccountId      Int?         @map("to_account_id")
+  // Selalu positif, kecuali type=adjustment (bertanda: + menambah, − mengurangi)
+  amount           BigInt
+  feeAmount        BigInt       @default(0) @map("fee_amount")
+  // Untuk debt_payment: bagian pokok (sisanya = bunga/biaya, tercatat di split kategori Biaya Keuangan)
+  principalAmount  BigInt       @default(0) @map("principal_amount")
+  note             String?      @db.VarChar(255)
+  beneficiary      Beneficiary?
+  status           TxStatus     @default(realized)
+  recurringId      Int?         @map("recurring_id")
+  recurringDueDate DateTime?    @map("recurring_due_date") @db.Date
+  debtId           Int?         @map("debt_id")
+  goalId           Int?         @map("goal_id")
+  // Transaksi biaya admin anak dari transfer
+  parentId         Int?         @map("parent_id")
+  createdById      Int          @map("created_by")
+  updatedById      Int?         @map("updated_by")
+  deletedAt        DateTime?    @map("deleted_at")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  account    Account          @relation("txAccount", fields: [accountId], references: [id], onDelete: Restrict)
+  toAccount  Account?         @relation("txToAccount", fields: [toAccountId], references: [id], onDelete: Restrict)
+  recurring  RecurringRule?   @relation(fields: [recurringId], references: [id], onDelete: SetNull)
+  debt       Debt?            @relation(fields: [debtId], references: [id], onDelete: SetNull)
+  goal       Goal?            @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  parent     Transaction?     @relation("txFee", fields: [parentId], references: [id], onDelete: Cascade)
+  children   Transaction[]    @relation("txFee")
+  createdBy  User             @relation("txCreatedBy", fields: [createdById], references: [id])
+  updatedBy  User?            @relation("txUpdatedBy", fields: [updatedById], references: [id])
+  splits     TransactionSplit[]
+  tags       TransactionTag[]
+  goalAllocations GoalAllocation[]
+  scheduleRows    DebtSchedule[]
+
+  @@index([date])
+  @@index([accountId, date])
+  @@index([toAccountId])
+  @@index([deletedAt])
+  @@index([recurringId, recurringDueDate])
+  @@map("transactions")
+}
+
+model TransactionSplit {
+  id            Int     @id @default(autoincrement())
+  transactionId Int     @map("transaction_id")
+  categoryId    Int     @map("category_id")
+  amount        BigInt
+  note          String? @db.VarChar(255)
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([categoryId])
+  @@map("transaction_splits")
+}
+
+model Tag {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(40)
+
+  transactions TransactionTag[]
+
+  @@map("tags")
+}
+
+model TransactionTag {
+  transactionId Int @map("transaction_id")
+  tagId         Int @map("tag_id")
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tag         Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
+  @@map("transaction_tags")
+}
+
+model RecurringRule {
+  id           Int           @id @default(autoincrement())
+  name         String        @db.VarChar(80)
+  // {type, amount, accountId, toAccountId?, categoryId?, debtId?, goalId?, note?, beneficiary?}
+  templateJson Json          @map("template_json")
+  frequency    Frequency
+  interval     Int           @default(1)
+  dayOfMonth   Int?          @map("day_of_month")
+  dayOfWeek    Int?          @map("day_of_week")
+  monthOfYear  Int?          @map("month_of_year")
+  startDate    DateTime      @map("start_date") @db.Date
+  nextRunDate  DateTime      @map("next_run_date") @db.Date
+  mode         RecurringMode @default(confirm)
+  endDate      DateTime?     @map("end_date") @db.Date
+  isActive     Boolean       @default(true) @map("is_active")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  transactions Transaction[]
+
+  @@map("recurring_rules")
+}
+
+model BudgetPeriod {
+  id            Int          @id @default(autoincrement())
+  periodStart   DateTime     @unique @map("period_start") @db.Date
+  periodEnd     DateTime     @map("period_end") @db.Date
+  plannedIncome BigInt       @default(0) @map("planned_income")
+  status        PeriodStatus @default(open)
+  closedAt      DateTime?    @map("closed_at")
+  closedById    Int?         @map("closed_by")
+  snapshotJson  Json?        @map("snapshot_json")
+
+  budgets Budget[]
+
+  @@map("budget_periods")
+}
+
+model Budget {
+  id              Int     @id @default(autoincrement())
+  periodId        Int     @map("period_id")
+  categoryId      Int?    @map("category_id")
+  goalId          Int?    @map("goal_id")
+  debtId          Int?    @map("debt_id")
+  amount          BigInt
+  rolloverEnabled Boolean @default(false) @map("rollover_enabled")
+  rolloverAmount  BigInt  @default(0) @map("rollover_amount")
+
+  period   BudgetPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  category Category?    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  goal     Goal?        @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  debt     Debt?        @relation(fields: [debtId], references: [id], onDelete: Cascade)
+
+  @@unique([periodId, categoryId, goalId, debtId])
+  @@map("budgets")
+}
+
+model BudgetTemplate {
+  id        Int    @id @default(autoincrement())
+  name      String @db.VarChar(80)
+  // [{categoryId?, goalId?, debtId?, amount, rolloverEnabled}]
+  itemsJson Json   @map("items_json")
+
+  @@map("budget_templates")
+}
+
+model SinkingFund {
+  id           Int     @id @default(autoincrement())
+  name         String  @db.VarChar(80)
+  categoryId   Int     @map("category_id")
+  annualAmount BigInt  @map("annual_amount")
+  dueMonth     Int     @map("due_month")
+  accountId    Int?    @map("account_id")
+  isActive     Boolean @default(true) @map("is_active")
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  account  Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@map("sinking_funds")
+}
+
+model AllocationTemplate {
+  id        Int             @id @default(autoincrement())
+  name      String          @db.VarChar(80)
+  trigger   TemplateTrigger
+  // [{targetType: account|goal|debt, targetId, amount?|percent?, label}]
+  itemsJson Json            @map("items_json")
+
+  @@map("allocation_templates")
+}
+
+model Goal {
+  id           Int       @id @default(autoincrement())
+  name         String    @db.VarChar(80)
+  targetAmount BigInt    @map("target_amount")
+  targetDate   DateTime? @map("target_date") @db.Date
+  accountId    Int?      @map("account_id")
+  owner        Owner     @default(bersama)
+  priority     Int       @default(3)
+  icon         String    @default("🎯") @db.VarChar(16)
+  isAchieved   Boolean   @default(false) @map("is_achieved")
+  // Dana darurat: target dihitung otomatis = N × pengeluaran wajib bulanan
+  isEmergency  Boolean   @default(false) @map("is_emergency")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  account      Account?         @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  allocations  GoalAllocation[]
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@map("goals")
+}
+
+model GoalAllocation {
+  id            Int      @id @default(autoincrement())
+  goalId        Int      @map("goal_id")
+  transactionId Int?     @map("transaction_id")
+  // + setoran, − penarikan
+  amount        BigInt
+  date          DateTime @db.Date
+  note          String?  @db.VarChar(255)
+  createdById   Int      @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  goal        Goal         @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, date])
+  @@map("goal_allocations")
+}
+
+model Debt {
+  id                Int          @id @default(autoincrement())
+  name              String       @db.VarChar(80)
+  lender            String       @db.VarChar(80)
+  type              DebtType
+  borrower          Owner
+  principal         BigInt
+  // Pokok yang sudah dibayar sebelum mulai dicatat di ZuDe (tanpa transaksi)
+  openingPaidPrincipal BigInt    @default(0) @map("opening_paid_principal")
+  startDate         DateTime     @map("start_date") @db.Date
+  tenorMonths       Int          @map("tenor_months")
+  interestType      InterestType @map("interest_type")
+  // Persen per tahun ×100 (basis poin), mis. 7,5% = 750
+  interestRateBp    Int          @default(0) @map("interest_rate_bp")
+  installmentAmount BigInt       @default(0) @map("installment_amount")
+  dueDay            Int          @map("due_day")
+  lateFee           BigInt       @default(0) @map("late_fee")
+  defaultAccountId  Int?         @map("default_account_id")
+  status            DebtStatus   @default(active)
+  note              String?      @db.VarChar(255)
+  createdAt         DateTime     @default(now()) @map("created_at")
+
+  defaultAccount Account?         @relation(fields: [defaultAccountId], references: [id], onDelete: SetNull)
+  rateChanges    DebtRateChange[]
+  schedule       DebtSchedule[]
+  transactions   Transaction[]
+  budgets        Budget[]
+
+  @@map("debts")
+}
+
+model DebtRateChange {
+  id             Int      @id @default(autoincrement())
+  debtId         Int      @map("debt_id")
+  effectiveDate  DateTime @map("effective_date") @db.Date
+  interestRateBp Int      @map("interest_rate_bp")
+
+  debt Debt @relation(fields: [debtId], references: [id], onDelete: Cascade)
+
+  @@index([debtId, effectiveDate])
+  @@map("debt_rate_changes")
+}
+
+model DebtSchedule {
+  id                   Int            @id @default(autoincrement())
+  debtId               Int            @map("debt_id")
+  periodNo             Int            @map("period_no")
+  dueDate              DateTime       @map("due_date") @db.Date
+  principalPart        BigInt         @map("principal_part")
+  interestPart         BigInt         @map("interest_part")
+  total                BigInt
+  remainingPrincipal   BigInt         @map("remaining_principal")
+  status               ScheduleStatus @default(unpaid)
+  paymentTransactionId Int?           @map("payment_transaction_id")
+
+  debt               Debt         @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  paymentTransaction Transaction? @relation(fields: [paymentTransactionId], references: [id], onDelete: SetNull)
+
+  @@unique([debtId, periodNo])
+  @@map("debt_schedule")
+}
+
+model Receivable {
+  id           Int              @id @default(autoincrement())
+  debtorName   String           @map("debtor_name") @db.VarChar(80)
+  amount       BigInt
+  paidAmount   BigInt           @default(0) @map("paid_amount")
+  date         DateTime         @db.Date
+  promisedDate DateTime?        @map("promised_date") @db.Date
+  status       ReceivableStatus @default(open)
+  note         String?          @db.VarChar(255)
+  // [{date, amount, note}]
+  historyJson  Json?            @map("history_json")
+
+  @@map("receivables")
+}
+
+model Asset {
+  id       Int       @id @default(autoincrement())
+  name     String    @db.VarChar(80)
+  type     AssetType
+  owner    Owner     @default(bersama)
+  unit     String?   @db.VarChar(16)
+  quantity Decimal?  @db.Decimal(18, 4)
+
+  valuations AssetValuation[]
+
+  @@map("assets")
+}
+
+model AssetValuation {
+  id      Int      @id @default(autoincrement())
+  assetId Int      @map("asset_id")
+  date    DateTime @db.Date
+  value   BigInt
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId, date])
+  @@map("asset_valuations")
+}
+
+model Notification {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  type        String    @db.VarChar(40)
+  title       String    @db.VarChar(120)
+  body        String    @db.VarChar(255)
+  payloadJson Json?     @map("payload_json")
+  url         String?   @db.VarChar(255)
+  dedupeKey   String?   @map("dedupe_key") @db.VarChar(120)
+  readAt      DateTime? @map("read_at")
+  pushedAt    DateTime? @map("pushed_at")
+  // Push yang tertunda karena jam tenang
+  pushAfter   DateTime? @map("push_after")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+model PushSubscription {
+  id            Int       @id @default(autoincrement())
+  userId        Int       @map("user_id")
+  endpoint      String    @unique @db.VarChar(512)
+  p256dh        String    @db.VarChar(255)
+  auth          String    @db.VarChar(255)
+  userAgent     String?   @map("user_agent") @db.VarChar(255)
+  deviceLabel   String?   @map("device_label") @db.VarChar(80)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  lastSuccessAt DateTime? @map("last_success_at")
+  failedCount   Int       @default(0) @map("failed_count")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
+}
+
+model NotificationPref {
+  userId       Int     @map("user_id")
+  type         String  @db.VarChar(40)
+  pushEnabled  Boolean @default(true) @map("push_enabled")
+  inappEnabled Boolean @default(true) @map("inapp_enabled")
+  emailEnabled Boolean @default(true) @map("email_enabled")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, type])
+  @@map("notification_prefs")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  entity     String   @db.VarChar(40)
+  entityId   String?  @map("entity_id") @db.VarChar(40)
+  action     String   @db.VarChar(20)
+  beforeJson Json?    @map("before_json")
+  afterJson  Json?    @map("after_json")
+  reason     String?  @db.VarChar(255)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
