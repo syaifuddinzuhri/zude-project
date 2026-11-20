@@ -1,5 +1,5 @@
 "use client";
-import { cloneElement, forwardRef, isValidElement, useId } from "react";
+import { cloneElement, forwardRef, isValidElement, useEffect, useId, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export function Label({ children, htmlFor, className }: { children: React.ReactNode; htmlFor?: string; className?: string }) {
@@ -11,10 +11,32 @@ export function Label({ children, htmlFor, className }: { children: React.ReactN
 }
 
 const base =
-  "w-full rounded-btn border border-border bg-surface px-3.5 text-input text-text outline-none transition-shadow placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/40 focus:shadow-[0_0_0_4px_rgba(15,118,110,0.12)]";
+  "w-full min-w-0 rounded-btn border border-border bg-surface px-3.5 text-input text-text outline-none transition-shadow placeholder:text-muted/70 focus:border-primary focus:ring-2 focus:ring-primary/40 focus:shadow-[0_0_0_4px_rgba(15,118,110,0.12)]";
 
-export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function Input({ className, ...rest }, ref) {
-  return <input ref={ref} className={cn(base, "h-12", className)} {...rest} />;
+/**
+ * `autoFocus` hanya berlaku di perangkat dengan mouse/trackpad. Di HP/tablet (layar sentuh)
+ * keyboard tidak dibuka otomatis — baru muncul saat isian diketuk.
+ */
+export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function Input({ className, autoFocus, ...rest }, ref) {
+  const inner = useRef<HTMLInputElement | null>(null);
+  useEffect(() => {
+    if (!autoFocus) return;
+    if (typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches) {
+      const t = setTimeout(() => inner.current?.focus({ preventScroll: true }), 50);
+      return () => clearTimeout(t);
+    }
+  }, [autoFocus]);
+  return (
+    <input
+      ref={(el) => {
+        inner.current = el;
+        if (typeof ref === "function") ref(el);
+        else if (ref) ref.current = el;
+      }}
+      className={cn(base, "h-12", className)}
+      {...rest}
+    />
+  );
 });
 
 export { Select } from "./select";

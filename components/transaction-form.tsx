@@ -159,7 +159,9 @@ export function TransactionForm({ initial, onDone }: { initial: TxFormInitial; o
   const accountOptions = d.accounts;
 
   return (
-    <div className="relative flex h-full flex-col">
+    <div className="relative flex h-full min-h-0 flex-col">
+      {/* Isi form: area scroll sendiri, agar tombol Simpan tetap di bawah & tidak menimpa isian */}
+      <div className="sheet-scroll min-h-0 flex-1 overflow-y-auto px-5 pb-4 pt-3">
       {/* Jenis transaksi */}
       <div className="no-scrollbar -mx-5 mb-3 flex gap-2 overflow-x-auto px-5">
         {TYPES.map((t) => (
@@ -401,7 +403,9 @@ export function TransactionForm({ initial, onDone }: { initial: TxFormInitial; o
         </div>
       )}
 
-      <div className="sticky bottom-0 -mx-5 mt-4 bg-gradient-to-t from-[var(--surface-solid-95)] to-transparent px-5 pb-1 pt-3">
+      </div>
+
+      <div className="shrink-0 border-t border-border/60 bg-[var(--surface-solid-95)] px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3">
         <Button block onClick={() => submit()} loading={pending} disabled={reason !== null && !reason.trim()}>
           Simpan
         </Button>

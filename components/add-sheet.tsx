@@ -29,7 +29,7 @@ export function AddSheet() {
   }, [params, open, router]);
 
   return (
-    <BottomSheet open={state.open} onOpenChange={(v) => (v ? null : close())} full>
+    <BottomSheet open={state.open} onOpenChange={(v) => (v ? null : close())} full bare>
       {state.open && (
         <TransactionForm
           key={nonce}

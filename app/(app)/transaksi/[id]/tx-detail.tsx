@@ -130,7 +130,7 @@ export function TxDetail({ t }: { t: View }) {
         <Input autoFocus placeholder="Alasan" value={reason} onChange={(e) => setReason(e.target.value)} />
       </BottomSheet>
 
-      <BottomSheet open={edit} onOpenChange={setEdit} full>
+      <BottomSheet open={edit} onOpenChange={setEdit} full bare>
         {edit && (
           <TransactionForm
             initial={{

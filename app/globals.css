@@ -317,3 +317,35 @@ textarea {
     display: block;
   }
 }
+
+/* Area scroll di bottom sheet: hanya vertikal (tidak bisa digeser ke samping, termasuk di Safari iOS) */
+.sheet-scroll {
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+/* Baris yang memang digeser horizontal (chip jenis transaksi, tujuan) tetap bisa digeser */
+.sheet-scroll .overflow-x-auto {
+  touch-action: pan-x pan-y;
+}
+
+/* Input tanggal/jam: di Safari iOS punya lebar minimum bawaan yang mendorong grid 2 kolom keluar layar */
+input[type="date"],
+input[type="time"] {
+  min-width: 0;
+  max-width: 100%;
+}
+@supports (-webkit-touch-callout: none) {
+  input[type="date"],
+  input[type="time"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: flex;
+    align-items: center;
+  }
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
+}
