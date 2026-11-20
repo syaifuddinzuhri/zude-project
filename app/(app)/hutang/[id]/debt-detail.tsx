@@ -18,6 +18,7 @@ import { Money } from "@/components/ui/money";
 import { ProgressBar } from "@/components/ui/progress";
 import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 import { cn } from "@/lib/utils";
 
 interface D {
@@ -30,6 +31,7 @@ export function DebtDetail({ d, schedule, payScheduleId }: { d: D; schedule: Row
   const app = useAppData();
   const { name } = useOwnerName();
   const toast = useToast();
+  const confirm = useConfirm();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [sheet, setSheet] = useState<null | "pay" | "extra" | "rate" | "edit">(null);
@@ -189,7 +191,7 @@ export function DebtDetail({ d, schedule, payScheduleId }: { d: D; schedule: Row
           </Select>
         </Field>
         <Field label="Catatan"><Input value={info.note} onChange={(e) => setInfo({ ...info, note: e.target.value })} /></Field>
-        <Button variant="ghost" block className="text-expense" onClick={() => window.confirm("Hapus hutang ini? Hanya bisa bila belum ada pembayaran.") && start(async () => { const r = await deleteDebtAction(d.id); if (!r.ok) return toast.error(r.error); router.push("/hutang"); router.refresh(); })}>
+        <Button variant="ghost" block className="text-expense" onClick={async () => (await confirm({ title: `Hapus hutang "${d.name}"?`, message: "Jadwal cicilannya ikut terhapus. Hanya bisa bila belum ada pembayaran." })) && start(async () => { const r = await deleteDebtAction(d.id); if (!r.ok) return toast.error(r.error); router.push("/hutang"); router.refresh(); })}>
           Hapus hutang
         </Button>
       </BottomSheet>

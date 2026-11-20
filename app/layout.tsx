@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import "./globals.css";
 import { PwaClient } from "@/components/pwa-client";
 import { ToastProvider } from "@/components/ui/toast";
+import { ConfirmProvider } from "@/components/ui/confirm";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -47,11 +48,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="id" data-theme={dataTheme} className={jakarta.variable} suppressHydrationWarning>
       <body className="font-sans">
         <ToastProvider>
+          <ConfirmProvider>
           <div className="app-shell">
             <div className="bg-blobs" aria-hidden />
             {children}
           </div>
           <PwaClient />
+          </ConfirmProvider>
         </ToastProvider>
       </body>
     </html>

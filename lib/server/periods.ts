@@ -1,6 +1,6 @@
 import "server-only";
 import { db, n, type Tx } from "@/lib/db";
-import { toDate, fromDate, type ISODate } from "@/lib/finance/date";
+import { toDate, fromDate, formatRange, type ISODate } from "@/lib/finance/date";
 import type { Period } from "@/lib/finance/cycle";
 import { getSettings, periodOf } from "./settings";
 
@@ -31,7 +31,7 @@ export async function assertEditable(dates: ISODate[], reason: string | null | u
   for (const d of dates) {
     const locked = await lockedPeriodFor(d, tx);
     if (locked && !reason?.trim()) {
-      throw new Error(`LOCKED:Bulan ${fromDate(locked.periodStart)} s.d. ${fromDate(locked.periodEnd)} sudah dikunci — isi alasan perubahan`);
+      throw new Error(`LOCKED:Siklus ${formatRange(fromDate(locked.periodStart), fromDate(locked.periodEnd))} ${fromDate(locked.periodEnd).slice(0, 4)} sudah ditutup. Isi alasan perubahan (tercatat di log aktivitas).`);
     }
   }
 }

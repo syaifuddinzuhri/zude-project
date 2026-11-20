@@ -16,6 +16,7 @@ import { Money, useHideAmount } from "@/components/ui/money";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ChartTooltip } from "@/components/charts";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 
 interface A { id: number; name: string; type: string; owner: string; unit: string | null; quantity: number | null; value: number; history: { date: string; value: number }[] }
 
@@ -23,6 +24,7 @@ export function AssetsView({ nw, series, assets }: { nw: { accounts: number; ass
   const [edit, setEdit] = useState<(Partial<A> & { date: string; price?: number }) | null>(null);
   const [pending, start] = useTransition();
   const toast = useToast();
+  const confirm = useConfirm();
   const router = useRouter();
   const { hidden } = useHideAmount();
   const { name, option } = useOwnerName();
@@ -135,7 +137,7 @@ export function AssetsView({ nw, series, assets }: { nw: { accounts: number; ass
                 {edit.history.map((h) => <div key={h.date} className="flex justify-between text-[13px]"><span>{formatShortDate(h.date)} {h.date.slice(0, 4)}</span><Money value={h.value} /></div>)}
               </div>
             )}
-            {edit.id && <Button variant="ghost" block className="text-expense" onClick={() => window.confirm("Hapus aset ini beserta riwayat nilainya?") && start(async () => { const r = await deleteAssetAction(edit.id!); if (!r.ok) return toast.error(r.error); setEdit(null); router.refresh(); })}>Hapus aset</Button>}
+            {edit.id && <Button variant="ghost" block className="text-expense" onClick={async () => (await confirm({ title: `Hapus aset "${edit.name}"?`, message: "Aset beserta riwayat nilainya dihapus." })) && start(async () => { const r = await deleteAssetAction(edit.id!); if (!r.ok) return toast.error(r.error); setEdit(null); router.refresh(); })}>Hapus aset</Button>}
           </>
         )}
       </BottomSheet>

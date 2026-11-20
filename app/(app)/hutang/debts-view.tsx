@@ -16,6 +16,7 @@ import { Money } from "@/components/ui/money";
 import { Gauge, ProgressBar } from "@/components/ui/progress";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 
 interface Summary {
   total: number;
@@ -132,6 +133,7 @@ function ReceivableSheet({ r, onClose }: { r: Receivable | "new" | null; onClose
   const [pay, setPay] = useState(0);
   const [pending, start] = useTransition();
   const toast = useToast();
+  const confirm = useConfirm();
   const router = useRouter();
   if (!r) return null;
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, msg: string) =>
@@ -165,7 +167,7 @@ function ReceivableSheet({ r, onClose }: { r: Receivable | "new" | null; onClose
               <p className="mt-2 text-caption text-muted">Catat juga pemasukannya di akun tujuan bila uang sudah diterima.</p>
             </>
           )}
-          <Button variant="ghost" block className="mt-2 text-expense" onClick={() => window.confirm("Hapus piutang ini?") && run(() => deleteReceivableAction(cur!.id), "Piutang dihapus")}>Hapus</Button>
+          <Button variant="ghost" block className="mt-2 text-expense" onClick={async () => (await confirm({ title: `Hapus piutang ${cur!.debtorName}?`, message: "Catatan piutang & riwayat pembayarannya dihapus." })) && run(() => deleteReceivableAction(cur!.id), "Piutang dihapus")}>Hapus</Button>
         </>
       )}
     </BottomSheet>

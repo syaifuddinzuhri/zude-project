@@ -17,6 +17,7 @@ import { Icon } from "@/components/ui/icon";
 import { Money } from "@/components/ui/money";
 import { Ring } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 
 export function GoalDetail({ g, raw, history }: { g: GoalView; raw: GoalFormValue; history: { id: number; date: string; amount: number; note: string | null; txId: number | null }[] }) {
   const d = useAppData();
@@ -26,6 +27,7 @@ export function GoalDetail({ g, raw, history }: { g: GoalView; raw: GoalFormValu
   const [celebrate, setCelebrate] = useState(false);
   const [pending, start] = useTransition();
   const toast = useToast();
+  const confirm = useConfirm();
   const router = useRouter();
 
   const submit = () =>
@@ -93,8 +95,8 @@ export function GoalDetail({ g, raw, history }: { g: GoalView; raw: GoalFormValu
         <Button
           variant="ghost"
           className="text-expense"
-          onClick={() => {
-            if (!window.confirm("Hapus tujuan ini? Riwayat setoran ikut terhapus (transaksi tetap ada).")) return;
+          onClick={async () => {
+            if (!(await confirm({ title: `Hapus tujuan "${g.name}"?`, message: "Riwayat setoran tujuan ini ikut terhapus. Transaksinya tetap ada." }))) return;
             start(async () => {
               const r = await deleteGoalAction(g.id);
               if (!r.ok) return toast.error(r.error);

@@ -14,6 +14,7 @@ import { CategoryIcon, Icon } from "@/components/ui/icon";
 import { Money } from "@/components/ui/money";
 import { ProgressBar } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 import { cn } from "@/lib/utils";
 
 const STEPS = ["Cocokkan saldo", "Tagihan", "Ringkasan", "Sisa uang", "Kunci"];
@@ -29,6 +30,7 @@ export function CloseWizard(p: {
 }) {
   const d = useAppData();
   const toast = useToast();
+  const confirm = useConfirm();
   const router = useRouter();
   const [pending, start] = useTransition();
   const [step, setStep] = useState(0);
@@ -188,7 +190,7 @@ export function CloseWizard(p: {
           <p className="my-2 text-[14px] text-muted">
             Snapshot disimpan dan tidak berubah walau data lama diedit. Setelah dikunci, transaksi siklus ini hanya bisa diubah dengan mengisi alasan (tercatat di log).
           </p>
-          <Button block variant="hero" loading={pending} onClick={() => window.confirm("Kunci bulan ini sekarang?") && finalize()}>
+          <Button block variant="hero" loading={pending} onClick={async () => (await confirm({ title: "Tutup & kunci bulan ini?", message: "Snapshot disimpan. Setelah dikunci, transaksi siklus ini hanya bisa diubah dengan mengisi alasan.", tone: "primary", icon: "lock", confirmLabel: "Kunci" })) && finalize()}>
             <Icon name="lock" /> Tutup & kunci bulan
           </Button>
         </Card>

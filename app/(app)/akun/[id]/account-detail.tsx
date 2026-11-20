@@ -17,6 +17,7 @@ import { Money } from "@/components/ui/money";
 import { ProgressBar } from "@/components/ui/progress";
 import { TxRow } from "@/components/tx-row";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 
 export function AccountDetail({ a, txs }: { a: AccountView; txs: TxView[] }) {
   const { name } = useOwnerName();
@@ -27,6 +28,7 @@ export function AccountDetail({ a, txs }: { a: AccountView; txs: TxView[] }) {
   const [needReason, setNeedReason] = useState(false);
   const [pending, start] = useTransition();
   const toast = useToast();
+  const confirm = useConfirm();
   const router = useRouter();
   const target = neg ? -actual : actual;
 
@@ -68,8 +70,13 @@ export function AccountDetail({ a, txs }: { a: AccountView; txs: TxView[] }) {
             variant="ghost"
             block
             className="text-expense"
-            onClick={() => {
-              if (!window.confirm(txs.length ? "Akun punya transaksi, jadi akan diarsipkan. Lanjut?" : "Hapus akun ini permanen?")) return;
+            onClick={async () => {
+              const ok = await confirm(
+                txs.length
+                  ? { title: "Arsipkan akun?", message: "Akun ini punya transaksi, jadi diarsipkan (disembunyikan), bukan dihapus. Riwayat tetap aman.", confirmLabel: "Arsipkan", icon: "lock" }
+                  : { title: `Hapus akun "${a.name}"?`, message: "Akun dihapus permanen." },
+              );
+              if (!ok) return;
               start(async () => {
                 const r = await deleteAccountAction(a.id);
                 if (!r.ok) return toast.error(r.error);

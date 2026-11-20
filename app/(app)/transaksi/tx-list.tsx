@@ -11,6 +11,7 @@ import { Icon } from "@/components/ui/icon";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PullToRefresh } from "@/components/pull-refresh";
 import { useToast } from "@/components/ui/toast";
+import { useConfirm } from "@/components/ui/confirm";
 
 export function TxList({ items, mode = "normal" }: { items: TxView[]; mode?: "normal" | "trash" }) {
   const groups = useMemo(() => {
@@ -56,6 +57,7 @@ function SwipeRow({ t, last, mode }: { t: TxView; last: boolean; mode: "normal" 
   const leftBg = useTransform(x, [-120, -40, 0], [1, 0.6, 0]);
   const rightBg = useTransform(x, [0, 40, 120], [0, 0.6, 1]);
   const toast = useToast();
+  const confirm = useConfirm();
   const router = useRouter();
   const [, start] = useTransition();
   const [gone, setGone] = useState(false);
@@ -68,7 +70,7 @@ function SwipeRow({ t, last, mode }: { t: TxView; last: boolean; mode: "normal" 
       if (!r.ok) {
         animate(x, 0);
         if (r.locked) {
-          const why = window.prompt(`${r.error}\nAlasan:`);
+          const why = await askReason(r.error);
           if (why) {
             const r2 = await deleteTxAction(t.id, why);
             if (!r2.ok) return toast.error(r2.error);
@@ -106,7 +108,7 @@ function SwipeRow({ t, last, mode }: { t: TxView; last: boolean; mode: "normal" 
       const r = await restoreTxAction(t.id);
       if (!r.ok) {
         if (r.locked) {
-          const why = window.prompt(`${r.error}\nAlasan:`);
+          const why = await askReason(r.error);
           if (why) {
             const r2 = await restoreTxAction(t.id, why);
             if (!r2.ok) return toast.error(r2.error);
@@ -121,6 +123,11 @@ function SwipeRow({ t, last, mode }: { t: TxView; last: boolean; mode: "normal" 
       toast.success("Transaksi dipulihkan");
       router.refresh();
     });
+
+  const askReason = async (message: string) => {
+    const v = await confirm({ title: "Bulan ini sudah dikunci", message, tone: "primary", icon: "lock", confirmLabel: "Lanjut", input: { label: "Alasan perubahan", placeholder: "mis. salah catat", required: true } });
+    return typeof v === "string" ? v : null;
+  };
 
   if (gone) return null;
 
