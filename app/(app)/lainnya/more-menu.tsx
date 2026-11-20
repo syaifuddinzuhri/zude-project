@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { useAppData } from "@/components/app-data";
 import { useInstallPrompt } from "@/components/pwa";
-import { Avatar } from "@/components/ui/avatar";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { logoutAction } from "@/lib/actions/auth";
@@ -25,10 +24,7 @@ export function MoreMenu() {
   return (
     <div className="space-y-4">
       <div className="hero flex items-center gap-4 rounded-card p-4">
-        <div className="relative flex -space-x-3">
-          <Avatar name={d.names.suami} label="suami" size={48} className="ring-white/60" />
-          <Avatar name={d.names.istri} label="istri" size={48} className="ring-white/60" />
-        </div>
+        <img src="/avatar-256.jpg" alt={`${d.names.suami} & ${d.names.istri}`} width={64} height={64} className="relative h-16 w-16 shrink-0 rounded-full object-cover object-[50%_30%] ring-2 ring-white/60" />
         <div className="relative">
           <div className="text-[17px] font-bold">{d.names.suami} &amp; {d.names.istri}</div>
           <div className="text-[13px] text-white/85">{d.me.name}</div>
@@ -64,8 +60,8 @@ export function MoreMenu() {
       </div>
 
       <form action={logoutAction}>
-        <Button variant="ghost" block className="text-expense">
-          <Icon name="log-out" /> Keluar
+        <Button variant="ghost" block className="text-muted">
+          <Icon name="lock" /> Kunci
         </Button>
       </form>
     </div>

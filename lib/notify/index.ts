@@ -44,7 +44,6 @@ export async function notify(userIds: number[], message: NotificationMessage) {
     const recipient: Recipient = {
       id: u.id,
       name: u.name,
-      email: u.email,
       quietStart: u.quietStart,
       quietEnd: u.quietEnd,
       hideAmountInPush: u.hideAmountInPush,

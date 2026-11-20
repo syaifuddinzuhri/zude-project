@@ -33,7 +33,7 @@ export default async function Beranda({ searchParams }: { searchParams: Promise<
 
   return (
     <>
-      <AppHeader title={`${greeting()}, ${user.name}`} large />
+      <AppHeader title={`${greeting()}, ${d.names.suami} & ${d.names.istri}`} large />
       <Page className="space-y-3">
         <PeriodSwitcher period={d.period} offset={offset} basePath="/" extra={filter !== "semua" ? { f: filter } : undefined} />
 

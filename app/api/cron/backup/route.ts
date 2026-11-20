@@ -3,6 +3,7 @@ import { cronAuthorized, unauthorized } from "@/lib/server/cron";
 import { writeDailyBackup } from "@/lib/server/backup";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /** Cron harian: backup database (retensi 30 hari). */
 async function handle(req: NextRequest) {

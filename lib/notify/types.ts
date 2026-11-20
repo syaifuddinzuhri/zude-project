@@ -36,7 +36,6 @@ export interface NotificationMessage {
 export interface Recipient {
   id: number;
   name: string;
-  email: string;
   quietStart: string;
   quietEnd: string;
   hideAmountInPush: boolean;

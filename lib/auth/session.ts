@@ -1,15 +1,16 @@
 import { SignJWT, jwtVerify } from "jose";
 
 export const SESSION_COOKIE = "zude_session";
-export const UNLOCK_COOKIE = "zude_unlock";
-export const SESSION_DAYS = 30;
-/** Kunci otomatis setelah tidak aktif (menit). */
+/**
+ * Terkunci otomatis setelah tidak aktif (menit). Cookie sesi tanpa maxAge,
+ * jadi juga hilang saat aplikasi/browser ditutup → PIN diminta lagi saat dibuka.
+ */
 export const IDLE_MINUTES = 15;
 
 export interface SessionClaims {
   uid: number;
   sv: number;
-  pin: boolean;
+  iat: number;
 }
 
 function secret() {
@@ -18,11 +19,11 @@ function secret() {
   return new TextEncoder().encode(s);
 }
 
-export async function signSession(c: SessionClaims): Promise<string> {
-  return new SignJWT({ ...c, t: "s" })
+export async function signSession(c: { uid: number; sv: number }): Promise<string> {
+  return new SignJWT({ uid: c.uid, sv: c.sv, t: "s" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime(`${SESSION_DAYS}d`)
+    .setExpirationTime(`${IDLE_MINUTES}m`)
     .sign(secret());
 }
 
@@ -31,41 +32,7 @@ export async function verifySession(token: string | undefined): Promise<SessionC
   try {
     const { payload } = await jwtVerify(token, secret());
     if (payload.t !== "s") return null;
-    return { uid: Number(payload.uid), sv: Number(payload.sv), pin: Boolean(payload.pin) };
-  } catch {
-    return null;
-  }
-}
-
-export async function signUnlock(uid: number): Promise<string> {
-  return new SignJWT({ uid, t: "u" })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(`${IDLE_MINUTES}m`)
-    .sign(secret());
-}
-
-export async function verifyUnlock(token: string | undefined, uid: number): Promise<{ iat: number } | null> {
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, secret());
-    if (payload.t !== "u" || Number(payload.uid) !== uid) return null;
-    return { iat: Number(payload.iat) };
-  } catch {
-    return null;
-  }
-}
-
-/** Token 2 langkah: password benar, menunggu kode TOTP. */
-export async function signPending(uid: number): Promise<string> {
-  return new SignJWT({ uid, t: "p" }).setProtectedHeader({ alg: "HS256" }).setExpirationTime("5m").sign(secret());
-}
-
-export async function verifyPending(token: string | undefined): Promise<number | null> {
-  if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, secret());
-    return payload.t === "p" ? Number(payload.uid) : null;
+    return { uid: Number(payload.uid), sv: Number(payload.sv), iat: Number(payload.iat) };
   } catch {
     return null;
   }

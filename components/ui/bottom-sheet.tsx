@@ -1,6 +1,11 @@
 "use client";
+import { createContext, useContext } from "react";
 import { Drawer } from "vaul";
 import { cn } from "@/lib/utils";
+
+/** True bila komponen berada di dalam bottom sheet (untuk sheet bertingkat). */
+export const InSheetContext = createContext(false);
+export const useInSheet = () => useContext(InSheetContext);
 
 /**
  * Bottom sheet kaca (blur 24px, radius atas 28px, handle), bisa di-drag untuk menutup.
@@ -23,8 +28,10 @@ export function BottomSheet({
   full?: boolean;
   footer?: React.ReactNode;
 }) {
+  const nested = useInSheet();
+  const Root = nested ? Drawer.NestedRoot : Drawer.Root;
   return (
-    <Drawer.Root open={open} onOpenChange={onOpenChange} repositionInputs={false}>
+    <Root open={open} onOpenChange={onOpenChange} repositionInputs={false}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 z-[60] bg-[var(--overlay)]" />
         <Drawer.Content
@@ -42,12 +49,12 @@ export function BottomSheet({
           )}
           {description && <Drawer.Description className="px-5 pb-2 text-caption text-muted">{description}</Drawer.Description>}
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4" data-vaul-no-drag={full ? "" : undefined}>
-            {children}
+            <InSheetContext.Provider value={true}>{children}</InSheetContext.Provider>
           </div>
-          {footer && <div className="shrink-0 px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-2">{footer}</div>}
+          {footer && <div className="shrink-0 px-5 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-2"><InSheetContext.Provider value={true}>{footer}</InSheetContext.Provider></div>}
           {!footer && <div className="pb-safe" />}
         </Drawer.Content>
       </Drawer.Portal>
-    </Drawer.Root>
+    </Root>
   );
 }

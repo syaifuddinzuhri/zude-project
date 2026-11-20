@@ -86,13 +86,15 @@ function mailer() {
 
 export class EmailChannel implements NotificationChannel {
   readonly name = "email";
-  async send({ recipient, message }: Delivery) {
+  async send({ message }: Delivery) {
     const t = mailer();
-    if (!t) return;
+    // Satu akun rumah tangga tanpa email login: penerima diatur lewat env NOTIFY_EMAIL (pisah koma)
+    const to = (process.env.NOTIFY_EMAIL ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+    if (!t || to.length === 0) return;
     const base = process.env.APP_URL || "";
     await t.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
-      to: recipient.email,
+      to,
       subject: `ZuDe — ${message.title}`,
       text: `${message.body}\n\nBuka: ${base}${message.url}`,
       html: `<div style="font-family:sans-serif;font-size:15px;color:#0F172A"><p><strong>${message.title}</strong></p><p>${message.body}</p><p><a href="${base}${message.url}" style="color:#0F766E">Buka ZuDe</a></p></div>`,

@@ -1,6 +1,6 @@
 /**
  * Seed kategori bawaan (REQUIREMENTS 3.3) & pengaturan rumah tangga.
- * Aman dijalankan berulang (idempoten). Pengguna dibuat lewat halaman /setup.
+ * Aman dijalankan berulang (idempoten). Juga membuat akun rumah tangga tunggal bila belum ada.
  */
 import { PrismaClient, type CategoryNature } from "@prisma/client";
 
@@ -73,6 +73,7 @@ async function upsertCategory(data: {
 
 async function main() {
   await db.householdSettings.upsert({ where: { id: 1 }, create: { id: 1 }, update: {} });
+  if ((await db.user.count()) === 0) await db.user.create({ data: { name: "Smart Money Management" } });
 
   let order = 0;
   for (const [i, g] of income.entries()) {

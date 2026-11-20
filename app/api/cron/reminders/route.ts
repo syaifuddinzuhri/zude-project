@@ -3,6 +3,7 @@ import { cronAuthorized, unauthorized } from "@/lib/server/cron";
 import { runReminders } from "@/lib/server/reminders";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /** Cron tiap 15 menit: pengingat tagihan, gajian, tutup buku, tujuan, harian + kirim push tertunda (jam tenang). */
 async function handle(req: NextRequest) {

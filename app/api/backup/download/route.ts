@@ -9,6 +9,7 @@ import { db } from "@/lib/db";
 import { todayJakarta } from "@/lib/finance/date";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /** Unduh backup: `?file=zude-YYYY-MM-DD.sql.gz` (arsip harian) atau tanpa parameter = backup baru saat ini. */
 export async function GET(req: NextRequest) {

@@ -140,12 +140,8 @@ enum AssetType {
 
 model User {
   id                Int          @id @default(autoincrement())
-  name              String       @db.VarChar(80)
-  email             String       @unique @db.VarChar(191)
-  passwordHash      String       @map("password_hash") @db.VarChar(255)
+  name              String       @default("Smart Money Management") @db.VarChar(80)
   pinHash           String?      @map("pin_hash") @db.VarChar(255)
-  totpSecret        String?      @map("totp_secret") @db.VarChar(64)
-  totpEnabled       Boolean      @default(false) @map("totp_enabled")
   theme             String       @default("system") @db.VarChar(10)
   quietStart        String       @default("22:00") @map("quiet_start") @db.VarChar(5)
   quietEnd          String       @default("06:00") @map("quiet_end") @db.VarChar(5)
@@ -623,4 +619,14 @@ model AuditLog {
   @@index([entity, entityId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+/// Percobaan PIN yang gagal (pembatas brute force; tersimpan di DB agar berlaku di semua instance serverless)
+model AuthAttempt {
+  id        Int      @id @default(autoincrement())
+  key       String   @db.VarChar(80)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([key, createdAt])
+  @@map("auth_attempts")
 }

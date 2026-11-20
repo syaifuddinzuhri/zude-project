@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ZuDe — Kas Zuhri &amp; Devi</title>
+  <meta name="description" content="Smart Money Management — keuangan rumah tangga Zuhri &amp; Devi.">
+  <!-- Website pribadi: jangan diindeks mesin pencari -->
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0F766E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2314B8A6'/%3E%3Cstop offset='.45' stop-color='%230F766E'/%3E%3Cstop offset='1' stop-color='%234338CA'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='116' fill='url(%23g)'/%3E%3Cpath d='M128 150H278A106 106 0 0 1 278 362H128L278 150' fill='none' stroke='%23fff' stroke-width='46' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --glass: rgba(255, 255, 255, 0.65);
+      --glass-border: rgba(255, 255, 255, 0.7);
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #0f766e;
+      --blob1: rgba(204, 251, 241, 0.7);
+      --blob2: rgba(224, 231, 255, 0.7);
+      --hero: linear-gradient(135deg, #0f766e 0%, #4338ca 100%);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1120;
+        --surface: #172033;
+        --glass: rgba(23, 32, 51, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --primary: #2dd4bf;
+        --blob1: rgba(19, 78, 74, 0.55);
+        --blob2: rgba(49, 46, 129, 0.5);
+      }
+    }
+    * { box-sizing: border-box; margin: 0; }
+    html { min-height: 100%; background: var(--bg); overflow-x: hidden; }
+    body {
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    }
+    .blob { position: fixed; width: 420px; height: 420px; border-radius: 50%; filter: blur(70px); z-index: 0; pointer-events: none; }
+    .blob.a { top: -140px; left: -140px; background: var(--blob1); }
+    .blob.b { bottom: -160px; right: -160px; background: var(--blob2); }
+
+    main { position: relative; z-index: 1; width: 100%; max-width: 430px; text-align: center; }
+
+    .logo { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+    .logo svg { width: 64px; height: 64px; filter: drop-shadow(0 10px 24px rgba(15, 118, 110, 0.35)); }
+    .word { text-align: left; }
+    .word b { display: block; font-size: 40px; line-height: 1; font-weight: 800; letter-spacing: -1.5px; }
+    .word b span { color: var(--primary); }
+    .word small { display: block; margin-top: 6px; font-size: 14px; font-weight: 500; color: var(--muted); }
+
+    .card {
+      background: var(--glass);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 28px 22px;
+      box-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
+    }
+    h1 { font-size: 22px; line-height: 28px; font-weight: 700; margin-bottom: 8px; }
+    .lead { font-size: 15px; line-height: 22px; color: var(--muted); margin-bottom: 22px; }
+
+    ul { list-style: none; padding: 0; display: grid; gap: 10px; margin-bottom: 24px; text-align: left; }
+    li { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; }
+    li i {
+      flex: none; width: 36px; height: 36px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-style: normal; font-size: 17px; background: rgba(20, 184, 166, 0.15);
+    }
+
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; min-height: 52px; padding: 0 20px; border-radius: 14px;
+      background: var(--hero); color: #fff; text-decoration: none;
+      font-size: 16px; font-weight: 700;
+      box-shadow: 0 8px 24px rgba(15, 118, 110, 0.35);
+      transition: transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 150ms;
+    }
+    .btn:hover { box-shadow: 0 10px 28px rgba(15, 118, 110, 0.45); }
+    .btn:active { transform: scale(0.97); }
+    .btn:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+    .btn svg { width: 20px; height: 20px; }
+
+    .hint { margin-top: 14px; font-size: 12px; line-height: 16px; color: var(--muted); }
+    footer { margin-top: 22px; font-size: 12px; color: var(--muted); }
+
+    @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+    @media (prefers-reduced-transparency: reduce) { .card { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+  </style>
+</head>
+<body>
+  <div class="blob a" aria-hidden="true"></div>
+  <div class="blob b" aria-hidden="true"></div>
+
+  <main>
+    <div class="logo">
+      <svg viewBox="0 0 512 512" aria-hidden="true">
+        <defs>
+          <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#14B8A6" />
+            <stop offset=".45" stop-color="#0F766E" />
+            <stop offset="1" stop-color="#4338CA" />
+          </linearGradient>
+        </defs>
+        <rect width="512" height="512" rx="116" fill="url(#lg)" />
+        <path d="M128 150H278A106 106 0 0 1 278 362H128L278 150" fill="none" stroke="#fff" stroke-width="46" stroke-linejoin="round" stroke-linecap="round" />
+      </svg>
+      <div class="word">
+        <b>Zu<span>De</span></b>
+        <small>Kas Zuhri &amp; Devi</small>
+      </div>
+    </div>
+
+    <section class="card">
+      <h1>Smart Money Management</h1>
+      <p class="lead">Catatan keuangan rumah tangga kami berdua — pemasukan, anggaran, tabungan, dan cicilan dalam satu tempat.</p>
+      <ul>
+        <li><i aria-hidden="true">📊</i>Anggaran bulanan &amp; sisa uang per hari</li>
+        <li><i aria-hidden="true">🎯</i>Tujuan tabungan &amp; dana darurat</li>
+        <li><i aria-hidden="true">🔔</i>Pengingat tagihan &amp; cicilan</li>
+      </ul>
+
+      <!-- Ganti href dengan alamat Vercel aplikasi ZuDe -->
+      <a class="btn" id="open-app" href="https://zude.vercel.app">
+        Buka Aplikasi
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /><path d="m13 6 6 6-6 6" /></svg>
+      </a>
+      <p class="hint">Masuk dengan PIN. Di HP, buka aplikasinya lalu pilih <b>Tambah ke Layar Utama</b> agar terasa seperti aplikasi.</p>
+    </section>
+
+    <footer>&copy; <span id="y">2026</span> Zuhri &amp; Devi</footer>
+  </main>
+
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

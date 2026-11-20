@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
 import { Prisma } from "@prisma/client";
+import nodemailer from "nodemailer";
 import { db } from "@/lib/db";
 import { todayJakarta } from "@/lib/finance/date";
 
@@ -49,10 +50,36 @@ export async function dumpSql(): Promise<string> {
   return out.join("\n");
 }
 
+/** Serverless (Vercel) tidak punya disk permanen → backup dikirim lewat email. */
+export const DISK_BACKUP = !process.env.VERCEL;
+
+async function emailBackup(name: string, gz: Buffer) {
+  const to = (process.env.NOTIFY_EMAIL ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+  if (!process.env.SMTP_HOST || to.length === 0) throw new Error("Backup email butuh SMTP_HOST & NOTIFY_EMAIL");
+  const t = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 465),
+    secure: (process.env.SMTP_SECURE ?? "true") === "true",
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+  await t.sendMail({
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    to,
+    subject: `ZuDe — backup database ${todayJakarta()}`,
+    text: "Backup harian database ZuDe terlampir (.sql.gz). Restore: ekstrak lalu Import di phpMyAdmin.",
+    attachments: [{ filename: name, content: gz, contentType: "application/gzip" }],
+  });
+}
+
 export async function writeDailyBackup() {
+  const name = `zude-${todayJakarta()}.sql.gz`;
+  const gz = gzipSync(await dumpSql());
+  if (!DISK_BACKUP) {
+    await emailBackup(name, gz);
+    return { file: name, via: "email", size: gz.length };
+  }
   await fs.mkdir(BACKUP_DIR, { recursive: true });
-  const file = path.join(BACKUP_DIR, `zude-${todayJakarta()}.sql.gz`);
-  await fs.writeFile(file, gzipSync(await dumpSql()));
+  await fs.writeFile(path.join(BACKUP_DIR, name), gz);
   // Retensi 30 hari
   const files = await fs.readdir(BACKUP_DIR);
   const cutoff = Date.now() - RETENTION_DAYS * 86_400_000;
@@ -65,10 +92,12 @@ export async function writeDailyBackup() {
       removed++;
     }
   }
-  return { file: path.basename(file), removed };
+  if (process.env.SMTP_HOST && process.env.NOTIFY_EMAIL && process.env.BACKUP_EMAIL === "1") await emailBackup(name, gz);
+  return { file: name, via: "disk", removed };
 }
 
 export async function listBackups() {
+  if (!DISK_BACKUP) return [];
   try {
     const files = (await fs.readdir(BACKUP_DIR)).filter((f) => /^zude-\d{4}-\d{2}-\d{2}\.sql\.gz$/.test(f)).sort().reverse();
     return Promise.all(files.map(async (f) => ({ name: f, size: (await fs.stat(path.join(BACKUP_DIR, f))).size })));

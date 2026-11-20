@@ -1,15 +1,15 @@
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth/current";
-import { LoginForm } from "./login-form";
+import { getCurrentUser, householdUser } from "@/lib/auth/current";
+import { getSettings, ownerNames } from "@/lib/server/settings";
+import { PinPad } from "./pin-pad";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Masuk" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   if (await getCurrentUser()) redirect("/");
-  const count = await db.user.count();
-  if (count === 0) redirect("/setup");
+  const [user, settings] = await Promise.all([householdUser(), getSettings()]);
+  const names = ownerNames(settings);
   const { next } = await searchParams;
-  return <LoginForm next={next} />;
+  return <PinPad title={user.name} subtitle={`${names.suami} & ${names.istri}`} next={next} />;
 }

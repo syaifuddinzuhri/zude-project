@@ -1,6 +1,6 @@
 # ZuDe — Kas Zuhri & Devi
 
-Website PWA keuangan rumah tangga suami & istri dengan **satu akun login** yang dipakai berdua. Keuangan suami, istri, dan bersama dipisahkan lewat pemilik akun/dompet, gaji, hutang, dan tujuan. Spesifikasi lengkap ada di [REQUIREMENTS.md](REQUIREMENTS.md).
+Website PWA pribadi untuk keuangan rumah tangga suami & istri. Tidak ada halaman daftar/setup: **masuk cukup dengan PIN**. Keuangan suami, istri, dan bersama dipisahkan lewat pemilik akun/dompet, gaji, hutang, dan tujuan. Spesifikasi lengkap ada di [REQUIREMENTS.md](REQUIREMENTS.md).
 
 **Stack:** Next.js 15 (App Router) · TypeScript · Tailwind · Prisma + MySQL · Motion · Vaul · Recharts · Web Push (VAPID) · Vitest.
 
@@ -12,7 +12,7 @@ Syarat: Node.js 20+, MySQL 8 / MariaDB 10.6+.
 
 ```bash
 npm install
-cp .env.example .env          # isi DATABASE_URL, AUTH_SECRET, SETUP_TOKEN, CRON_SECRET, VAPID_*
+cp .env.example .env          # isi DATABASE_URL, AUTH_SECRET, APP_PIN, CRON_SECRET, VAPID_*
 npx web-push generate-vapid-keys   # salin ke VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY
 
 # buat database (utf8mb4)
@@ -23,7 +23,9 @@ npm run db:seed               # kategori bawaan & pengaturan
 npm run dev                   # http://localhost:3000
 ```
 
-Buka `/setup`, masukkan `SETUP_TOKEN`, lalu buat **satu akun login** rumah tangga. Setelah itu pendaftaran tertutup otomatis. Login yang sama bisa dipakai di HP suami dan istri (push dikirim ke semua perangkat yang mengaktifkannya).
+Buka aplikasi lalu masukkan PIN dari `APP_PIN`. Akun rumah tangga (nama default **Smart Money Management**, suami **Zuhri**, istri **Devi**) dibuat otomatis; semua nama bisa diubah di *Pengaturan → Profil*. Ganti PIN di *Pengaturan → Keamanan*.
+
+**Lupa PIN?** Jalankan `UPDATE users SET pin_hash = NULL;` di phpMyAdmin, lalu masuk dengan `APP_PIN` dan atur PIN baru.
 
 Perintah lain:
 
@@ -41,7 +43,7 @@ Perintah lain:
 ## Struktur
 
 ```
-app/(auth)/          login, setup, kunci (PIN)
+app/(auth)/login     masuk dengan PIN
 app/(app)/           semua halaman (beranda, transaksi, anggaran, tagihan, tabungan, hutang, …)
 app/api/cron/*       endpoint terjadwal (dipanggil Cron Jobs hPanel)
 app/api/push/*       langganan Web Push
@@ -64,7 +66,47 @@ Aturan penting yang ditegakkan di server:
 
 ---
 
-## Deploy ke Hostinger hPanel (Web App Node.js)
+## Deploy ke Vercel + MySQL Niagahoster (dipakai sekarang)
+
+Paket shared Niagahoster tidak mendukung Node.js, jadi aplikasi dijalankan di **Vercel** (paket Hobby gratis, untuk pemakaian pribadi), sedangkan **database tetap MySQL Niagahoster**.
+
+### 1. Siapkan database (Niagahoster)
+1. Database & user MySQL sudah ada (`u123456_zude`). Pakai **password yang kuat** (min. 20 karakter acak, tanpa `@ : / # ? %` agar tidak perlu di-encode).
+2. hPanel → *Databases → Remote MySQL* → tambahkan host **`%`** (semua IP) untuk database tersebut. Vercel tidak punya IP tetap, jadi akses harus dibuka untuk semua IP — keamanan bergantung pada password tadi.
+3. `DATABASE_URL` memakai host/IP server MySQL (bukan `localhost`) dan pool kecil, karena shared hosting membatasi jumlah koneksi:
+   ```
+   mysql://u123456_USER:PASSWORD@HOST_MYSQL_NIAGAHOSTER:3306/u123456_zude?connection_limit=3&pool_timeout=20
+   ```
+
+### 2. Upload kode ke GitHub
+Buat repo **privat** di GitHub lalu push proyek ini (`.env` tidak ikut karena sudah di-`.gitignore`).
+
+### 3. Buat proyek di Vercel
+1. [vercel.com](https://vercel.com) → *Add New → Project* → impor repo tadi. Framework terdeteksi **Next.js**.
+2. *Environment Variables* — isi semua dari `.env.example`:
+   `DATABASE_URL`, `AUTH_SECRET`, `APP_PIN`, `APP_URL` (domain Vercel, mis. `https://zude.vercel.app`), `CRON_SECRET`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `NOTIFY_EMAIL`, `SMTP_*`.
+3. **Deploy.** `vercel.json` sudah mengatur: region **Singapura (sin1)**, build menjalankan `prisma migrate deploy` lalu `next build`, dan dua cron harian.
+4. Buka domain Vercel → masuk dengan `APP_PIN` → ganti PIN di *Pengaturan → Keamanan*.
+
+Alternatif tanpa GitHub: `npx vercel` lalu `npx vercel --prod` dari folder proyek (login akun Vercel saat diminta), isi environment variable lewat dashboard.
+
+### 4. Jadwal (cron)
+| Tugas | Diatur di | Jadwal |
+| --- | --- | --- |
+| Transaksi berulang | `vercel.json` (otomatis) | harian 00:10 WIB |
+| Backup database → email | `vercel.json` (otomatis) | harian 02:00 WIB |
+| Pengingat tagihan, gajian, tutup buku, push tertunda | **[cron-job.org](https://cron-job.org)** (gratis) | setiap 15 menit |
+
+Cron Vercel paket Hobby hanya boleh sekali sehari, jadi pengingat 15-menitan memakai cron-job.org:
+*Create cronjob* → URL `https://DOMAIN-ANDA/api/cron/reminders` → *Every 15 minutes* → tab *Advanced* → *Headers*: `x-cron-secret` = nilai `CRON_SECRET`.
+Cron Vercel otomatis mengirim header `Authorization: Bearer CRON_SECRET`, yang juga diterima aplikasi.
+
+### 5. Backup
+Vercel tidak punya disk permanen, jadi backup harian dikirim sebagai **lampiran email** (`.sql.gz`) ke `NOTIFY_EMAIL` — wajib isi `SMTP_*` (pakai akun email Niagahoster, host biasanya `smtp.hostinger.com`, port 465). Backup manual: *Pengaturan → Backup database → Unduh*. Niagahoster juga punya backup database bawaan di hPanel. Restore tetap lewat phpMyAdmin → Import.
+
+---
+
+## Alternatif: Hostinger/Niagahoster dengan paket Node.js
 
 > Fitur Web App (Node.js) hanya ada di paket **Business Web Hosting** atau **Cloud** (Startup ke atas).
 
@@ -74,11 +116,11 @@ Aturan penting yang ditegakkan di server:
    - Node version: **20** atau lebih baru
    - Build command: `npm ci && npx prisma migrate deploy && npm run build`
    - Start command: `npm start`
-4. **Environment variables** — isi semua variabel dari `.env.example` di pengaturan Web App (`DATABASE_URL`, `AUTH_SECRET`, `SETUP_TOKEN`, `APP_URL`, `CRON_SECRET`, `VAPID_*`, `SMTP_*`, `BACKUP_DIR`).
+4. **Environment variables** — isi semua variabel dari `.env.example` di pengaturan Web App (`DATABASE_URL`, `AUTH_SECRET`, `APP_PIN`, `APP_URL`, `CRON_SECRET`, `VAPID_*`, `SMTP_*`, `BACKUP_DIR`).
    `DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/NAMA_DB"`
 5. **Deploy**, lalu sekali saja jalankan seed (Terminal/SSH hPanel di folder aplikasi): `npm run db:seed`.
 6. **SSL** — aktifkan SSL gratis di hPanel. HTTPS wajib untuk PWA, cookie sesi, dan push.
-7. Buka `https://domain-anda/setup`, buat satu akun login. Setelah itu ganti/hapus `SETUP_TOKEN`.
+7. Buka `https://domain-anda`, masuk dengan `APP_PIN`, lalu ganti PIN di Pengaturan → Keamanan.
 
 Setiap push ke branch utama akan di-redeploy; migrasi baru dijalankan otomatis oleh `prisma migrate deploy` di build command.
 
@@ -122,14 +164,14 @@ Catatan: jadwal cron hPanel memakai zona waktu server; aplikasi selalu menghitun
 ## PWA & push notification
 
 ### Memasang di HP
-- **iPhone/iPad (Safari):** buka website → tombol **Bagikan** → **Tambah ke Layar Utama**. Banner panduan muncul otomatis sekali. Login sekali lagi setelah dipasang (PWA iOS punya cookie terpisah dari Safari).
+- **iPhone/iPad (Safari):** buka website → tombol **Bagikan** → **Tambah ke Layar Utama**. Banner panduan muncul otomatis sekali. Setelah dipasang, buka dari ikon dan masukkan PIN.
 - **Android (Chrome):** menu *Lainnya* → **Pasang di HP**, atau menu Chrome → *Instal aplikasi*.
 
 ### Langkah uji push di iPhone (iOS/iPadOS 16.4+)
 1. Pastikan website di HTTPS dan `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` terisi.
 2. Di Safari: Bagikan → **Tambah ke Layar Utama**.
 3. **Tutup Safari**, buka ZuDe dari **ikon di Layar Utama** (push tidak bisa dari tab Safari biasa).
-4. Login, lalu di Beranda (atau *Pengaturan → Notifikasi & perangkat*) ketuk **Aktifkan** → pilih **Izinkan**.
+4. Masukkan PIN, lalu di Beranda (atau *Pengaturan → Notifikasi & perangkat*) ketuk **Aktifkan** → pilih **Izinkan**.
 5. *Pengaturan → Notifikasi & perangkat* → **Kirim notifikasi uji**. Notifikasi muncul walau aplikasi ditutup.
 6. Ketuk notifikasinya → aplikasi terbuka di halaman terkait.
 7. Uji pengingat tagihan: buat cicilan/tagihan yang jatuh tempo besok, jalankan
@@ -142,7 +184,8 @@ Push di jam tenang (default 22:00–06:00) ditunda sampai jam tenang berakhir, k
 
 ## Keamanan
 
-- Password & PIN di-hash bcrypt (12 rounds); rate limit login, PIN (5× salah → keluar), dan 2FA.
-- Sesi: cookie `httpOnly`, `secure`, `sameSite=lax`, 30 hari. PIN diminta setiap aplikasi dibuka dan setelah 15 menit tidak aktif.
-- 2FA (TOTP) opsional di *Pengaturan → Keamanan*.
-- Endpoint cron dilindungi `CRON_SECRET` (perbandingan constant-time).
+- Masuk hanya dengan PIN (4–6 angka, disimpan sebagai hash bcrypt). PIN diminta setiap aplikasi dibuka dan setelah 15 menit tidak aktif.
+- Salah PIN dibatasi 5×/15 menit per IP dan 15×/15 menit secara global (mencegah tebak PIN).
+- Mengganti PIN membuat semua perangkat lain terkunci.
+- Cookie sesi `httpOnly`, `secure`, `sameSite=lax`. Endpoint cron dilindungi `CRON_SECRET` (perbandingan constant-time).
+- Email pengingat dikirim ke alamat di `NOTIFY_EMAIL`.

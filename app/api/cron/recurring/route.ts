@@ -1,15 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { db } from "@/lib/db";
+import { householdUser } from "@/lib/auth/current";
 import { cronAuthorized, unauthorized } from "@/lib/server/cron";
 import { runAutoRules } from "@/lib/server/recurring";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /** Cron harian: catat transaksi berulang mode otomatis yang jatuh tempo. */
 async function handle(req: NextRequest) {
   if (!cronAuthorized(req)) return unauthorized();
-  const user = await db.user.findFirst();
-  if (!user) return NextResponse.json({ ok: true, created: 0, note: "belum ada pengguna" });
+  const user = await householdUser();
   const created = await runAutoRules(user);
   return NextResponse.json({ ok: true, created });
 }

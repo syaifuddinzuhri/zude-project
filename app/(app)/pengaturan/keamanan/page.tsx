@@ -11,7 +11,7 @@ export default async function KeamananPage() {
     <>
       <AppHeader title="Keamanan" back="/pengaturan" />
       <Page>
-        <SecurityForm hasPin={Boolean(u.pinHash)} totp={u.totpEnabled} />
+        <SecurityForm usingInitialPin={!u.pinHash} />
       </Page>
     </>
   );

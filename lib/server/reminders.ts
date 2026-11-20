@@ -4,6 +4,7 @@ import { addDays, nowTimeJakarta, todayJakarta, toDate } from "@/lib/finance/dat
 import { isPayday } from "@/lib/finance/cycle";
 import { formatRp } from "@/lib/finance/money";
 import { flushDeferredPushes, notify } from "@/lib/notify";
+import { pruneAttempts } from "@/lib/auth/rate-limit";
 import { billsBetween } from "./recurring";
 import { getSettings, ownerNames, periodOf } from "./settings";
 import { goalsOverview } from "./goals";
@@ -107,6 +108,7 @@ export async function runReminders(now = new Date()) {
     }
   }
   stats.flushed = await flushDeferredPushes();
+  await pruneAttempts();
   return stats;
 }
 
