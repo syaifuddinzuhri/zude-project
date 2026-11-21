@@ -11,7 +11,7 @@ export default async function KeamananPage() {
     <>
       <AppHeader title="Keamanan" back="/pengaturan" />
       <Page>
-        <SecurityForm usingInitialPin={!u.pinHash} />
+        <SecurityForm usingInitialPin={!u.pinHash} resetEnabled={Boolean(process.env.RESET_PIN)} />
       </Page>
     </>
   );
