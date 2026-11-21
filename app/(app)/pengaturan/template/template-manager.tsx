@@ -7,7 +7,7 @@ import { useAppData } from "@/components/app-data";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Field, Input, MoneyInput, Select } from "@/components/ui/field";
+import { Field, Input, IntInput, MoneyInput, Select } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Segmented } from "@/components/ui/segmented";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -79,7 +79,7 @@ export function TemplateManager({ templates }: { templates: Tpl[] }) {
                       <option value="pct">Persen</option>
                     </Select>
                     {it.percent != null ? (
-                      <Input inputMode="numeric" value={it.percent} onChange={(e) => setItem(i, { percent: Math.min(100, Number(e.target.value.replace(/\D/g, "")) || 0) })} />
+                      <IntInput max={100} value={it.percent} onChange={(n) => setItem(i, { percent: n })} />
                     ) : (
                       <MoneyInput value={it.amount ?? 0} onChange={(v) => setItem(i, { amount: v })} />
                     )}

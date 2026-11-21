@@ -90,6 +90,57 @@ export function MoneyInput({ value, onChange, placeholder, id, autoFocus }: { va
   );
 }
 
+/**
+ * Input bilangan bulat (tanggal, bulan, persen). Teks boleh dikosongkan selama diketik
+ * (mis. hapus "1" lalu ketik "25"); batas min dipasang saat isian ditinggalkan (blur).
+ * Nilai di atas max langsung dipotong ke max.
+ */
+export function IntInput({
+  value,
+  onChange,
+  min = 0,
+  max = Number.MAX_SAFE_INTEGER,
+  ...rest
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "min" | "max"> & {
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+}) {
+  const [text, setText] = useState(String(value));
+  const emitted = useRef(value);
+  useEffect(() => {
+    if (value === emitted.current) return;
+    emitted.current = value;
+    setText(String(value));
+  }, [value]);
+  const emit = (n: number) => {
+    emitted.current = n;
+    onChange(n);
+  };
+  return (
+    <Input
+      {...rest}
+      inputMode="numeric"
+      autoComplete="off"
+      value={text}
+      onChange={(e) => {
+        const t = e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+        if (t === "") return setText("");
+        const n = Math.min(max, Number(t));
+        setText(String(n));
+        if (n >= min) emit(n);
+      }}
+      onBlur={(e) => {
+        const n = text === "" ? Math.max(min, Math.min(max, emitted.current)) : Math.max(min, Math.min(max, Number(text)));
+        setText(String(n));
+        if (n !== emitted.current) emit(n);
+        rest.onBlur?.(e);
+      }}
+    />
+  );
+}
+
 /** Teks desimal → angka. Menerima koma atau titik sebagai pemisah desimal ("19,8" / "19.8"). */
 export function parseDecimal(text: string): number | null {
   const t = text.trim().replace(",", ".");

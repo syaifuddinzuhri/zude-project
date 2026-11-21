@@ -7,7 +7,7 @@ import { saveHouseholdAction, saveNamesAction, saveProfileAction } from "@/lib/a
 import { useAppData } from "@/components/app-data";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
-import { Field, Input, MoneyInput, Select, Switch } from "@/components/ui/field";
+import { Field, Input, IntInput, MoneyInput, Select, Switch } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Segmented } from "@/components/ui/segmented";
 import { useToast } from "@/components/ui/toast";
@@ -61,7 +61,6 @@ export function SettingsForm({ profile, household, names: initialNames, currentP
       toast.success("Pengaturan disimpan");
       router.refresh();
     });
-  const num = (v: string, max = 31) => Math.min(max, Math.max(1, Number(v.replace(/\D/g, "")) || 1));
 
   return (
     <div className="space-y-4">
@@ -106,8 +105,8 @@ export function SettingsForm({ profile, household, names: initialNames, currentP
         <SectionTitle title="Gaji & siklus bulan" />
         <Card>
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Tgl gajian suami"><Input inputMode="numeric" value={h.husbandPayday} onChange={(e) => setH({ ...h, husbandPayday: num(e.target.value) })} /></Field>
-            <Field label="Tgl gajian istri"><Input inputMode="numeric" value={h.wifePayday} onChange={(e) => setH({ ...h, wifePayday: num(e.target.value) })} /></Field>
+            <Field label="Tgl gajian suami"><IntInput min={1} max={31} value={h.husbandPayday} onChange={(n) => setH((x) => ({ ...x, husbandPayday: n }))} /></Field>
+            <Field label="Tgl gajian istri"><IntInput min={1} max={31} value={h.wifePayday} onChange={(n) => setH((x) => ({ ...x, wifePayday: n }))} /></Field>
             <Field label="Perkiraan gaji suami"><MoneyInput value={h.husbandSalary} onChange={(v) => setH({ ...h, husbandSalary: v })} /></Field>
             <Field label="Perkiraan gaji istri"><MoneyInput value={h.wifeSalary} onChange={(v) => setH({ ...h, wifeSalary: v })} /></Field>
             <Field label="Akun gaji suami">
@@ -144,7 +143,7 @@ export function SettingsForm({ profile, household, names: initialNames, currentP
           </Field>
           {h.cycleMode === "manual" && (
             <Field label="Tanggal awal siklus" hint="mis. 25 → 25 s.d. 24 bulan berikutnya">
-              <Input inputMode="numeric" value={h.cycleStartDay} onChange={(e) => setH({ ...h, cycleStartDay: num(e.target.value) })} />
+              <IntInput min={1} max={31} value={h.cycleStartDay} onChange={(n) => setH((x) => ({ ...x, cycleStartDay: n }))} />
             </Field>
           )}
           <Switch checked={h.paydayWeekendRule} onChange={(v) => setH({ ...h, paydayWeekendRule: v })} label="Maju ke hari kerja sebelumnya" description="Bila tanggal jatuh di akhir pekan (tgl 29–31 otomatis ke akhir bulan)" />
@@ -157,11 +156,11 @@ export function SettingsForm({ profile, household, names: initialNames, currentP
           <Field label="Ambang pengeluaran besar (akun bersama)" hint="Pasangan mendapat notifikasi bila pengeluaran ≥ nominal ini">
             <MoneyInput value={h.bigExpenseThreshold} onChange={(v) => setH({ ...h, bigExpenseThreshold: v })} />
           </Field>
-          <Field label="Kelipatan dana darurat (bulan)"><Input inputMode="numeric" value={h.emergencyMonths} onChange={(e) => setH({ ...h, emergencyMonths: num(e.target.value, 36) })} /></Field>
+          <Field label="Kelipatan dana darurat (bulan)"><IntInput min={1} max={36} value={h.emergencyMonths} onChange={(n) => setH((x) => ({ ...x, emergencyMonths: n }))} /></Field>
           <div className="grid grid-cols-3 gap-2">
-            <Field label="Wajib %"><Input inputMode="numeric" value={h.ratioNeeds} onChange={(e) => setH({ ...h, ratioNeeds: Number(e.target.value.replace(/\D/g, "")) || 0 })} /></Field>
-            <Field label="Keinginan %"><Input inputMode="numeric" value={h.ratioWants} onChange={(e) => setH({ ...h, ratioWants: Number(e.target.value.replace(/\D/g, "")) || 0 })} /></Field>
-            <Field label="Tabungan %"><Input inputMode="numeric" value={h.ratioSavings} onChange={(e) => setH({ ...h, ratioSavings: Number(e.target.value.replace(/\D/g, "")) || 0 })} /></Field>
+            <Field label="Wajib %"><IntInput max={100} value={h.ratioNeeds} onChange={(n) => setH((x) => ({ ...x, ratioNeeds: n }))} /></Field>
+            <Field label="Keinginan %"><IntInput max={100} value={h.ratioWants} onChange={(n) => setH((x) => ({ ...x, ratioWants: n }))} /></Field>
+            <Field label="Tabungan %"><IntInput max={100} value={h.ratioSavings} onChange={(n) => setH((x) => ({ ...x, ratioSavings: n }))} /></Field>
           </div>
           <p className="mb-3 text-caption text-muted">Mata uang IDR · format Rp 1.234.567</p>
           <Button block loading={pending} onClick={() => save(() => saveHouseholdAction(h))}>Simpan pengaturan rumah tangga</Button>

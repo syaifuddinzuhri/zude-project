@@ -10,7 +10,7 @@ import { useAppData } from "@/components/app-data";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
-import { Field, Input, MoneyInput, Select } from "@/components/ui/field";
+import { Field, Input, IntInput, MoneyInput, Select } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Money } from "@/components/ui/money";
 import { Segmented } from "@/components/ui/segmented";
@@ -291,12 +291,12 @@ function RuleSheet({ rule, onClose }: { rule: RuleView | "new" | null; onClose: 
         </Field>
         {(v.frequency === "every_n_months" || v.frequency === "daily" || v.frequency === "weekly") && (
           <Field label={v.frequency === "every_n_months" ? "Setiap N bulan" : v.frequency === "weekly" ? "Setiap N minggu" : "Setiap N hari"}>
-            <Input inputMode="numeric" value={v.interval} onChange={(e) => setV({ ...v, interval: Math.max(1, Number(e.target.value.replace(/\D/g, "")) || 1) })} />
+            <IntInput min={1} max={365} value={v.interval} onChange={(n) => setV((x) => ({ ...x, interval: n }))} />
           </Field>
         )}
         {(v.frequency === "monthly" || v.frequency === "every_n_months" || v.frequency === "yearly") && (
           <Field label="Tanggal">
-            <Input inputMode="numeric" value={v.dayOfMonth ?? ""} onChange={(e) => setV({ ...v, dayOfMonth: Math.min(31, Number(e.target.value.replace(/\D/g, "")) || 1) })} />
+            <IntInput min={1} max={31} value={v.dayOfMonth ?? 1} onChange={(n) => setV((x) => ({ ...x, dayOfMonth: n }))} />
           </Field>
         )}
         {v.frequency === "yearly" && (
