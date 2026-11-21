@@ -12,7 +12,7 @@ import { Confetti } from "@/components/confetti";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Field, Input, MoneyInput, Select } from "@/components/ui/field";
+import { DecimalInput, Field, Input, MoneyInput, Select } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Money } from "@/components/ui/money";
 import { ProgressBar } from "@/components/ui/progress";
@@ -175,7 +175,7 @@ export function DebtDetail({ d, schedule, payScheduleId }: { d: D; schedule: Row
       <BottomSheet open={sheet === "rate"} onOpenChange={(v) => !v && setSheet(null)} title="Perubahan bunga floating" footer={<Button block loading={pending} onClick={() => run(() => changeRateAction({ debtId: d.id, effectiveDate: rate.date, interestRate: rate.rate }), "Bunga diperbarui & jadwal dihitung ulang")}>Simpan</Button>}>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Berlaku mulai"><Input type="date" value={rate.date} onChange={(e) => setRate({ ...rate, date: e.target.value })} /></Field>
-          <Field label="Bunga % per tahun"><Input inputMode="decimal" value={rate.rate} onChange={(e) => setRate({ ...rate, rate: Number(e.target.value.replace(",", ".")) || 0 })} /></Field>
+          <Field label="Bunga % per tahun"><DecimalInput suffix="%" value={rate.rate} onChange={(n) => setRate({ ...rate, rate: n ?? 0 })} /></Field>
         </div>
         <p className="text-caption text-muted">Bunga saat ini {formatPercent(d.rateBp / 10000, 2)}. Jadwal yang belum dibayar dihitung ulang dari sisa pokok.</p>
       </BottomSheet>

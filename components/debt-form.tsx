@@ -8,7 +8,7 @@ import { todayJakarta } from "@/lib/finance/date";
 import { DEBT_TYPE_LABEL, INTEREST_TYPE_LABEL } from "@/lib/utils";
 import { useAppData, useOwnerName } from "./app-data";
 import { Button } from "./ui/button";
-import { Field, Input, MoneyInput, Select } from "./ui/field";
+import { DecimalInput, Field, Input, MoneyInput, Select } from "./ui/field";
 import { useToast } from "./ui/toast";
 
 export function DebtForm({ onDone }: { onDone: (id: number) => void }) {
@@ -23,7 +23,7 @@ export function DebtForm({ onDone }: { onDone: (id: number) => void }) {
     startDate: todayJakarta(),
     tenorMonths: 12,
     interestType: "annuity",
-    interestRate: 0,
+    interestRate: null as number | null,
     dueDay: 5,
     lateFee: 0,
     defaultAccountId: (d.accounts[0]?.id ?? null) as number | null,
@@ -41,7 +41,7 @@ export function DebtForm({ onDone }: { onDone: (id: number) => void }) {
         startDate: v.startDate,
         tenorMonths: v.tenorMonths,
         type: v.interestType as "flat",
-        rateBp: v.interestType === "zero" ? 0 : Math.round(v.interestRate * 100),
+        rateBp: v.interestType === "zero" ? 0 : Math.round((v.interestRate ?? 0) * 100),
         dueDay: v.dueDay,
       });
       return { first: rows[0]?.total ?? 0, interest: rows.reduce((s, r) => s + r.interest, 0) };
@@ -83,7 +83,7 @@ export function DebtForm({ onDone }: { onDone: (id: number) => void }) {
           </Select>
         </Field>
         <Field label="Bunga % per tahun">
-          <Input inputMode="decimal" disabled={v.interestType === "zero"} value={v.interestType === "zero" ? "0" : v.interestRate || ""} onChange={(e) => setV({ ...v, interestRate: Number(e.target.value.replace(",", ".")) || 0 })} />
+          <DecimalInput suffix="%" disabled={v.interestType === "zero"} value={v.interestType === "zero" ? 0 : v.interestRate} onChange={(n) => setV({ ...v, interestRate: n })} placeholder="mis. 19,8" />
         </Field>
       </div>
       <div className="grid grid-cols-2 gap-2">

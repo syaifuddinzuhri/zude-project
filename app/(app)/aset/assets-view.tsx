@@ -10,7 +10,7 @@ import { useOwnerName } from "@/components/app-data";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
-import { Field, Input, MoneyInput, Select } from "@/components/ui/field";
+import { DecimalInput, Field, Input, MoneyInput, Select } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Money, useHideAmount } from "@/components/ui/money";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -123,7 +123,7 @@ export function AssetsView({ nw, series, assets }: { nw: { accounts: number; ass
             </div>
             {isGold ? (
               <div className="grid grid-cols-2 gap-2">
-                <Field label="Berat (gram)"><Input inputMode="decimal" value={edit.quantity ?? ""} onChange={(e) => setEdit({ ...edit, quantity: Number(e.target.value.replace(",", ".")) || null })} /></Field>
+                <Field label="Berat (gram)"><DecimalInput maxDecimals={4} suffix="g" value={edit.quantity} onChange={(n) => setEdit({ ...edit, quantity: n })} /></Field>
                 <Field label="Harga per gram"><MoneyInput value={edit.price ?? 0} onChange={(v) => setEdit({ ...edit, price: v })} /></Field>
               </div>
             ) : (

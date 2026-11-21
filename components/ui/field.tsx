@@ -1,5 +1,5 @@
 "use client";
-import { cloneElement, forwardRef, isValidElement, useEffect, useId, useRef } from "react";
+import { cloneElement, forwardRef, isValidElement, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export function Label({ children, htmlFor, className }: { children: React.ReactNode; htmlFor?: string; className?: string }) {
@@ -86,6 +86,71 @@ export function MoneyInput({ value, onChange, placeholder, id, autoFocus }: { va
         value={value ? value.toLocaleString("id-ID") : ""}
         onChange={(e) => onChange(parseInt(e.target.value.replace(/\D/g, "") || "0", 10))}
       />
+    </div>
+  );
+}
+
+/** Teks desimal → angka. Menerima koma atau titik sebagai pemisah desimal ("19,8" / "19.8"). */
+export function parseDecimal(text: string): number | null {
+  const t = text.trim().replace(",", ".");
+  if (t === "" || t === ".") return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : null;
+}
+
+const fmtDecimal = (n: number | null | undefined) => (n == null ? "" : String(n).replace(".", ","));
+
+/**
+ * Input angka desimal (bunga %, berat gram). Teks disimpan apa adanya selama diketik,
+ * jadi "19," tidak langsung hilang komanya; nilai angka dikirim lewat onChange.
+ */
+export function DecimalInput({
+  value,
+  onChange,
+  maxDecimals = 2,
+  suffix,
+  ...rest
+}: Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange"> & {
+  value: number | null | undefined;
+  onChange: (v: number | null) => void;
+  maxDecimals?: number;
+  suffix?: string;
+}) {
+  const [text, setText] = useState(fmtDecimal(value));
+  const emitted = useRef<number | null>(value ?? null);
+  // Sinkron hanya bila nilai diubah dari luar (mis. form di-reset), bukan saat sedang diketik
+  useEffect(() => {
+    if ((value ?? null) === emitted.current) return;
+    emitted.current = value ?? null;
+    setText(fmtDecimal(value));
+  }, [value]);
+  const input = (
+    <Input
+      {...rest}
+      inputMode="decimal"
+      autoComplete="off"
+      value={text}
+      className={cn(suffix && "pr-12", rest.className)}
+      onChange={(e) => {
+        // Hanya angka + satu pemisah (koma/titik), dibatasi jumlah desimal
+        let t = e.target.value.replace(/[^\d.,]/g, "");
+        const sep = t.search(/[.,]/);
+        if (sep >= 0) {
+          const head = t.slice(0, sep);
+          const tail = t.slice(sep + 1).replace(/[.,]/g, "").slice(0, maxDecimals);
+          t = `${head},${tail}`;
+        }
+        setText(t);
+        emitted.current = parseDecimal(t);
+        onChange(emitted.current);
+      }}
+    />
+  );
+  if (!suffix) return input;
+  return (
+    <div className="relative">
+      {input}
+      <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-input text-muted">{suffix}</span>
     </div>
   );
 }
