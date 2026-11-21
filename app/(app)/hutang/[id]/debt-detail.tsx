@@ -12,7 +12,7 @@ import { Confetti } from "@/components/confetti";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { DecimalInput, Field, Input, MoneyInput, Select } from "@/components/ui/field";
+import { DecimalInput, Field, Input, MoneyInput, Select, Textarea } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Money } from "@/components/ui/money";
 import { ProgressBar } from "@/components/ui/progress";
@@ -101,6 +101,12 @@ export function DebtDetail({ d, schedule, payScheduleId }: { d: D; schedule: Row
         </div>
         {d.status === "paid_off" && <div className="mt-3 rounded-btn bg-income/15 px-3 py-2 text-center font-semibold text-income">Lunas 🎉</div>}
         {schedule.at(-1) && d.status !== "paid_off" && <div className="mt-2 text-caption text-muted">Perkiraan lunas {formatDate(schedule.at(-1)!.due)}</div>}
+        {d.note && (
+          <div className="mt-3 flex gap-2 rounded-btn bg-bg px-3 py-2 text-[13px] text-muted">
+            <Icon name="file-text" size={16} className="mt-0.5 shrink-0" />
+            <p className="min-w-0 whitespace-pre-line break-words">{d.note}</p>
+          </div>
+        )}
       </Card>
 
       {d.status !== "paid_off" && (
@@ -190,7 +196,7 @@ export function DebtDetail({ d, schedule, payScheduleId }: { d: D; schedule: Row
             {app.accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </Select>
         </Field>
-        <Field label="Catatan"><Input value={info.note} onChange={(e) => setInfo({ ...info, note: e.target.value })} /></Field>
+        <Field label="Catatan"><Textarea value={info.note} maxLength={255} rows={4} onChange={(e) => setInfo({ ...info, note: e.target.value })} /></Field>
         <Button variant="ghost" block className="text-expense" onClick={async () => (await confirm({ title: `Hapus hutang "${d.name}"?`, message: "Jadwal cicilannya ikut terhapus. Hanya bisa bila belum ada pembayaran." })) && start(async () => { const r = await deleteDebtAction(d.id); if (!r.ok) return toast.error(r.error); router.push("/hutang"); router.refresh(); })}>
           Hapus hutang
         </Button>

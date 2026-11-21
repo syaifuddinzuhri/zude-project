@@ -8,7 +8,7 @@ import { todayJakarta } from "@/lib/finance/date";
 import { DEBT_TYPE_LABEL, INTEREST_TYPE_LABEL } from "@/lib/utils";
 import { useAppData, useOwnerName } from "./app-data";
 import { Button } from "./ui/button";
-import { DecimalInput, Field, Input, MoneyInput, Select } from "./ui/field";
+import { DecimalInput, Field, Input, MoneyInput, Select, Textarea } from "./ui/field";
 import { useToast } from "./ui/toast";
 
 export function DebtForm({ onDone }: { onDone: (id: number) => void }) {
@@ -96,7 +96,7 @@ export function DebtForm({ onDone }: { onDone: (id: number) => void }) {
           {d.accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
         </Select>
       </Field>
-      <Field label="Catatan"><Input value={v.note} onChange={(e) => setV({ ...v, note: e.target.value })} /></Field>
+      <Field label="Catatan"><Textarea value={v.note} maxLength={255} rows={3} onChange={(e) => setV({ ...v, note: e.target.value })} /></Field>
       {preview && (
         <p className="mb-3 rounded-btn bg-primary-soft px-3 py-2 text-[13px]">
           Cicilan pertama <b>{formatRp(preview.first)}</b> · total bunga {formatRp(preview.interest)}
