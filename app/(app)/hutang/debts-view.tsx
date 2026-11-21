@@ -10,7 +10,7 @@ import { DebtForm } from "@/components/debt-form";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
-import { Field, Input, MoneyInput } from "@/components/ui/field";
+import { Field, Input, MoneyInput, OptionalDateInput } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Money } from "@/components/ui/money";
 import { Gauge, ProgressBar } from "@/components/ui/progress";
@@ -152,7 +152,7 @@ function ReceivableSheet({ r, onClose }: { r: Receivable | "new" | null; onClose
           <Field label="Nominal"><MoneyInput value={v.amount} onChange={(x) => setV({ ...v, amount: x })} /></Field>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Tanggal pinjam"><Input type="date" value={v.date} onChange={(e) => setV({ ...v, date: e.target.value })} /></Field>
-            <Field label="Janji bayar"><Input type="date" value={v.promisedDate} onChange={(e) => setV({ ...v, promisedDate: e.target.value })} /></Field>
+            <Field label="Janji bayar"><OptionalDateInput value={v.promisedDate} onChange={(x) => setV({ ...v, promisedDate: x })} /></Field>
           </div>
           <Field label="Catatan"><Input value={v.note} onChange={(e) => setV({ ...v, note: e.target.value })} /></Field>
           <Button block loading={pending} onClick={() => run(() => saveReceivableAction(null, v), "Piutang dicatat")}>Simpan</Button>

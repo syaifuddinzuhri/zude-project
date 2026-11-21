@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAppData } from "@/components/app-data";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Select } from "@/components/ui/field";
+import { Field, Input, OptionalDateInput, Select } from "@/components/ui/field";
 import { Chip } from "@/components/ui/segmented";
 import { Icon } from "@/components/ui/icon";
 import { TX_TYPE_LABEL } from "@/lib/utils";
@@ -91,10 +91,10 @@ export function TxFilterBar() {
       >
         <div className="grid grid-cols-2 gap-2">
           <Field label="Dari tanggal">
-            <Input type="date" value={draft.dari ?? ""} onChange={(e) => setDraft({ ...draft, dari: e.target.value })} />
+            <OptionalDateInput value={draft.dari} onChange={(x) => setDraft({ ...draft, dari: x })} />
           </Field>
           <Field label="Sampai tanggal">
-            <Input type="date" value={draft.sampai ?? ""} onChange={(e) => setDraft({ ...draft, sampai: e.target.value })} />
+            <OptionalDateInput value={draft.sampai} onChange={(x) => setDraft({ ...draft, sampai: x })} />
           </Field>
         </div>
         <Field label="Jenis">

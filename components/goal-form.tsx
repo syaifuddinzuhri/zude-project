@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { saveGoalAction } from "@/lib/actions/finance";
 import { useAppData, useOwnerName } from "./app-data";
 import { Button } from "./ui/button";
-import { Field, Input, MoneyInput, Select, Switch } from "./ui/field";
+import { Field, Input, MoneyInput, OptionalDateInput, Select, Switch } from "./ui/field";
 import { useToast } from "./ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +59,7 @@ export function GoalForm({ initial, onDone }: { initial?: Partial<GoalFormValue>
       <Switch checked={v.isEmergency} onChange={(x) => setV({ ...v, isEmergency: x })} label="Dana darurat" description="Target otomatis = N × pengeluaran wajib bulanan (N di Pengaturan)" />
       <div className="grid grid-cols-2 gap-2">
         <Field label={v.isEmergency ? "Target (cadangan)" : "Target nominal"}><MoneyInput value={v.targetAmount} onChange={(x) => setV({ ...v, targetAmount: x })} /></Field>
-        <Field label="Target tanggal"><Input type="date" value={v.targetDate ?? ""} onChange={(e) => setV({ ...v, targetDate: e.target.value || null })} /></Field>
+        <Field label="Target tanggal"><OptionalDateInput value={v.targetDate} onChange={(x) => setV({ ...v, targetDate: x || null })} /></Field>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Akun penyimpanan">

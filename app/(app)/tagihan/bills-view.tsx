@@ -10,7 +10,7 @@ import { useAppData } from "@/components/app-data";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
-import { Field, Input, IntInput, MoneyInput, Select } from "@/components/ui/field";
+import { Field, Input, IntInput, MoneyInput, Select, OptionalDateInput } from "@/components/ui/field";
 import { Icon } from "@/components/ui/icon";
 import { Money } from "@/components/ui/money";
 import { Segmented } from "@/components/ui/segmented";
@@ -316,7 +316,7 @@ function RuleSheet({ rule, onClose }: { rule: RuleView | "new" | null; onClose: 
       </div>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Mulai"><Input type="date" value={v.startDate} onChange={(e) => setV({ ...v, startDate: e.target.value })} /></Field>
-        <Field label="Berakhir (opsional)"><Input type="date" value={v.endDate ?? ""} onChange={(e) => setV({ ...v, endDate: e.target.value })} /></Field>
+        <Field label="Berakhir (opsional)"><OptionalDateInput value={v.endDate} onChange={(x) => setV({ ...v, endDate: x })} /></Field>
       </div>
       <Segmented
         className="mb-1"

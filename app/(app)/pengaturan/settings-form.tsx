@@ -33,7 +33,7 @@ type Household = {
 
 const LINKS = [
   { href: "/pengaturan/notifikasi", icon: "bell-ring", label: "Notifikasi & perangkat" },
-  { href: "/pengaturan/keamanan", icon: "shield-check", label: "Keamanan (PIN, password, 2FA)" },
+  { href: "/pengaturan/keamanan", icon: "shield-check", label: "Keamanan" },
   { href: "/pengaturan/kategori", icon: "tag", label: "Kategori" },
   { href: "/pengaturan/template", icon: "file-text", label: "Template alokasi gaji" },
   { href: "/pengaturan/backup", icon: "download", label: "Backup database" },

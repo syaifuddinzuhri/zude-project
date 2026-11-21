@@ -39,6 +39,25 @@ export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTML
   );
 });
 
+/**
+ * Input tanggal yang boleh kosong. Safari iOS tidak punya cara mengosongkan
+ * `<input type="date">` setelah diisi, jadi sediakan tombol × sendiri.
+ */
+export function OptionalDateInput({ value, onChange, id, "aria-label": ariaLabel, className }: { value: string | null | undefined; onChange: (v: string) => void; id?: string; "aria-label"?: string; className?: string }) {
+  return (
+    <div className={cn("relative", className)}>
+      <Input type="date" id={id} aria-label={ariaLabel} value={value ?? ""} onChange={(e) => onChange(e.target.value)} className={value ? "pr-11" : undefined} />
+      {value && (
+        <button type="button" onClick={() => onChange("")} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted" aria-label={`Kosongkan ${ariaLabel ?? "tanggal"}`}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+}
+
 export { Select } from "./select";
 
 export const Textarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea({ className, ...rest }, ref) {
