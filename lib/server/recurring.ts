@@ -15,7 +15,7 @@ export const templateSchema = z.object({
   categoryId: z.coerce.number().int().positive().nullish(),
   goalId: z.coerce.number().int().positive().nullish(),
   note: z.string().max(255).nullish(),
-  beneficiary: z.enum(["suami", "istri", "anak", "keluarga"]).nullish(),
+  beneficiary: z.enum(["suami", "istri", "anak", "keluarga", "bersama"]).nullish(),
 });
 export type Template = z.infer<typeof templateSchema>;
 

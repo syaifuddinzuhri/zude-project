@@ -26,7 +26,7 @@ export const txInputSchema = z.object({
   toAccountId: z.coerce.number().int().positive().nullish(),
   splits: z.array(z.object({ categoryId: z.coerce.number().int().positive(), amount: money, note: z.string().max(255).nullish() })).optional(),
   note: z.string().max(255).nullish(),
-  beneficiary: z.enum(["suami", "istri", "anak", "keluarga"]).nullish(),
+  beneficiary: z.enum(["suami", "istri", "anak", "keluarga", "bersama"]).nullish(),
   tags: z.array(z.string().trim().min(1).max(40)).max(10).optional(),
   feeAmount: money.min(0).optional(),
   status: z.enum(["planned", "realized"]).optional(),

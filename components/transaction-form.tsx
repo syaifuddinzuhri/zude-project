@@ -378,7 +378,7 @@ export function TransactionForm({ initial, onDone }: { initial: TxFormInitial; o
           <div>
             <div className="mb-1.5 text-caption text-muted">Untuk siapa</div>
             <div className="flex flex-wrap gap-2">
-              {(["suami", "istri", "anak", "keluarga"] as const).map((b) => (
+              {(["suami", "istri", "anak", "keluarga", "bersama"] as const).map((b) => (
                 <button key={b} type="button" onClick={() => setBeneficiary(beneficiary === b ? null : b)} className={cn("pressable h-9 rounded-full px-3.5 text-[13px] font-semibold capitalize", beneficiary === b ? "bg-primary text-on-primary" : "bg-surface text-muted shadow-card")}>
                   {b === "suami" || b === "istri" ? d.names[b] : b}
                 </button>

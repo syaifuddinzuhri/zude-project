@@ -23,6 +23,7 @@ enum Beneficiary {
   istri
   anak
   keluarga
+  bersama
 }
 
 enum CycleMode {

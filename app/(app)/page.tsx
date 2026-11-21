@@ -3,7 +3,6 @@ import { requireUser } from "@/lib/auth/current";
 import { dashboardData } from "@/lib/server/dashboard";
 import { AppHeader, Page } from "@/components/app-header";
 import { PeriodSwitcher } from "@/components/period-switcher";
-import { OwnerFilterBar } from "@/components/dashboard/owner-filter";
 import { HeroCard } from "@/components/dashboard/hero-card";
 import { BillsCarousel } from "@/components/dashboard/bills-carousel";
 import { PushCard } from "@/components/push-card";
@@ -15,27 +14,20 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { TxRow } from "@/components/tx-row";
 import { formatDate, formatShortDate } from "@/lib/finance/date";
 import { formatPercent } from "@/lib/finance/money";
-import type { OwnerFilter } from "@/lib/server/stats";
 
 export const dynamic = "force-dynamic";
 
-function greeting() {
-  const h = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jakarta", hour: "2-digit", hour12: false }).format(new Date()));
-  return h < 11 ? "Selamat pagi" : h < 15 ? "Selamat siang" : h < 18 ? "Selamat sore" : "Selamat malam";
-}
-
-export default async function Beranda({ searchParams }: { searchParams: Promise<{ p?: string; f?: string }> }) {
+export default async function Beranda({ searchParams }: { searchParams: Promise<{ p?: string }> }) {
   const user = await requireUser();
   const sp = await searchParams;
   const offset = Math.max(-24, Math.min(12, parseInt(sp.p ?? "0", 10) || 0));
-  const filter = (["semua", "bersama", "suami", "istri"].includes(sp.f ?? "") ? sp.f : "semua") as OwnerFilter;
-  const d = await dashboardData(user, offset, filter);
+  const d = await dashboardData(user, offset, "semua");
 
   return (
     <>
-      <AppHeader title={`${greeting()}, ${d.names.suami} & ${d.names.istri}`} large />
+      <AppHeader title={`Halo, ${d.names.suami} & ${d.names.istri}`} large />
       <Page className="space-y-3">
-        <PeriodSwitcher period={d.period} offset={offset} basePath="/" extra={filter !== "semua" ? { f: filter } : undefined} />
+        <PeriodSwitcher period={d.period} offset={offset} basePath="/" />
 
         {d.payday && (
           <Link href={`/gajian?who=${d.payday}`} className="pressable flex items-center gap-3 rounded-card border border-primary/30 bg-primary-soft p-4">
@@ -51,8 +43,6 @@ export default async function Beranda({ searchParams }: { searchParams: Promise<
         {!d.hasAccounts && <EmptyState icon="wallet" title="Mulai dengan menambahkan rekening, e-wallet, atau dompet tunai." action="Tambah akun" href="/akun?baru=1" />}
 
         <HeroCard available={d.available} left={d.left} perDay={d.perDay} daysLeft={d.daysLeft} income={d.totals.income} expense={d.totals.expense + d.totals.debtInterest} nextPayday={d.nextPayday} isCurrent={d.isCurrent} />
-
-        <OwnerFilterBar value={filter} />
 
         <PushCard />
 

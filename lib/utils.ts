@@ -45,7 +45,7 @@ export const INTEREST_TYPE_LABEL: Record<string, string> = {
   zero: "0%",
 };
 
-export const BENEFICIARY_LABEL: Record<string, string> = { suami: "Suami", istri: "Istri", anak: "Anak", keluarga: "Keluarga" };
+export const BENEFICIARY_LABEL: Record<string, string> = { suami: "Suami", istri: "Istri", anak: "Anak", keluarga: "Keluarga", bersama: "Bersama" };
 
 export const FREQUENCY_LABEL: Record<string, string> = {
   daily: "Harian",
