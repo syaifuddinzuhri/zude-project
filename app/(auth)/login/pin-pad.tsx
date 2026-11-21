@@ -6,7 +6,9 @@ import { pinLoginAction } from "@/lib/actions/auth";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
-export function PinPad({ title, subtitle, next }: { title: string; subtitle: string; next?: string }) {
+/** `pinLength` null = belum diketahui: tampilkan 6 titik, PIN lebih pendek dikirim dengan tombol ✓. */
+export function PinPad({ title, subtitle, next, pinLength }: { title: string; subtitle: string; next?: string; pinLength: number | null }) {
+  const digits = pinLength ?? 6;
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [shake, setShake] = useState(0);
@@ -34,10 +36,10 @@ export function PinPad({ title, subtitle, next }: { title: string; subtitle: str
     setError(null);
     if (k === "back") return setPin((p) => p.slice(0, -1));
     if (k === "ok") return pin.length >= 4 && submit(pin);
-    if (pin.length >= 6) return;
+    if (pin.length >= digits) return;
     const v = pin + k;
     setPin(v);
-    if (v.length === 6) submit(v);
+    if (v.length === digits) submit(v);
   };
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export function PinPad({ title, subtitle, next }: { title: string; subtitle: str
       <h1 className="text-center text-h1">{title}</h1>
       <p className="mb-6 text-caption text-muted">{subtitle} · masukkan PIN</p>
       <motion.div key={shake} animate={shake ? { x: [0, -10, 10, -6, 6, 0] } : {}} transition={{ duration: 0.35 }} className="mb-3 flex h-6 gap-3" aria-label={`${pin.length} digit dimasukkan`}>
-        {Array.from({ length: Math.max(4, pin.length) }).map((_, i) => (
+        {Array.from({ length: digits }).map((_, i) => (
           <span key={i} className={cn("h-3.5 w-3.5 rounded-full border-2 border-primary", i < pin.length && "bg-primary")} />
         ))}
       </motion.div>

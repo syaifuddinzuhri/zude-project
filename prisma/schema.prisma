@@ -143,6 +143,8 @@ model User {
   id                Int          @id @default(autoincrement())
   name              String       @default("Smart Money Management") @db.VarChar(80)
   pinHash           String?      @map("pin_hash") @db.VarChar(255)
+  // Jumlah digit PIN (4–6) agar layar masuk menampilkan titik yang pas; diisi saat ganti PIN / login berhasil
+  pinLength         Int?         @map("pin_length") @db.TinyInt
   theme             String       @default("system") @db.VarChar(10)
   quietStart        String       @default("22:00") @map("quiet_start") @db.VarChar(5)
   quietEnd          String       @default("06:00") @map("quiet_end") @db.VarChar(5)

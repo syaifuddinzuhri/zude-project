@@ -50,6 +50,7 @@ export async function pinLoginAction(pin: string, next?: string): Promise<Result
       return { ok: false, error: "PIN salah" };
     }
     await resetLimit(ipKey);
+    if (user.pinLength !== pin.length) await db.user.update({ where: { id: user.id }, data: { pinLength: pin.length } });
     (await cookies()).set(SESSION_COOKIE, await signSession({ uid: user.id, sv: user.sessionVersion }), cookieBase);
     await audit(db, { userId: user.id, entity: "user", entityId: user.id, action: "login" });
     return { ok: true, next: safeNext(next) };
@@ -70,7 +71,7 @@ export async function changePinAction(currentPin: string, newPin: string) {
   return run(async (u) => {
     if (!(await pinMatches(currentPin, u.pinHash))) throw new Error("PIN saat ini salah");
     if (!PIN_RE.test(newPin)) throw new Error("PIN baru harus 4–6 angka");
-    const updated = await db.user.update({ where: { id: u.id }, data: { pinHash: await hashSecret(newPin), sessionVersion: { increment: 1 } } });
+    const updated = await db.user.update({ where: { id: u.id }, data: { pinHash: await hashSecret(newPin), pinLength: newPin.length, sessionVersion: { increment: 1 } } });
     await audit(db, { userId: u.id, entity: "user", entityId: u.id, action: "change_pin" });
     (await cookies()).set(SESSION_COOKIE, await signSession({ uid: updated.id, sv: updated.sessionVersion }), cookieBase);
   });
