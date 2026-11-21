@@ -115,6 +115,12 @@ export function formatLongDate(iso: ISODate): string {
   return `${HARI[dayOfWeek(iso)]}, ${d} ${BULAN_PANJANG[m - 1]} ${y}`;
 }
 
+/** "Nov 26" — label sumbu grafik bulanan. */
+export function formatMonthShort(iso: ISODate): string {
+  const { y, m } = parts(iso.length === 7 ? `${iso}-01` : iso);
+  return `${BULAN[m - 1]} ${String(y).slice(2)}`;
+}
+
 export function formatMonthYear(iso: ISODate): string {
   const { y, m } = parts(iso);
   return `${BULAN_PANJANG[m - 1]} ${y}`;

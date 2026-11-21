@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/auth/current";
 import { db, n } from "@/lib/db";
 import { fromDate } from "@/lib/finance/date";
-import { debtSummary } from "@/lib/server/debts";
+import { debtPayoffTimeline, debtSummary } from "@/lib/server/debts";
 import { getSettings, periodOf } from "@/lib/server/settings";
 import { periodTotals } from "@/lib/server/stats";
 import { AppHeader, Page } from "@/components/app-header";
@@ -15,10 +15,11 @@ export default async function HutangPage({ searchParams }: { searchParams: Promi
   const s = await getSettings();
   const prev = await periodTotals(periodOf(s, undefined, -1));
   const income = Math.max(prev.income, n(s.husbandSalary) + n(s.wifeSalary));
-  const [summary, receivables, paidOff] = await Promise.all([
+  const [summary, receivables, paidOff, timeline] = await Promise.all([
     debtSummary(income),
     db.receivable.findMany({ orderBy: [{ status: "asc" }, { promisedDate: "asc" }] }),
     db.debt.findMany({ where: { status: "paid_off" }, select: { id: true, name: true, principal: true } }),
+    debtPayoffTimeline(),
   ]);
   return (
     <>
@@ -26,6 +27,7 @@ export default async function HutangPage({ searchParams }: { searchParams: Promi
       <Page>
         <DebtsView
           s={summary}
+          timeline={timeline}
           income={income}
           openNew={(await searchParams).baru === "1"}
           paidOff={paidOff.map((d) => ({ id: d.id, name: d.name, principal: n(d.principal) }))}

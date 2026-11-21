@@ -4,7 +4,7 @@ import { db, n } from "@/lib/db";
 import { fromDate } from "@/lib/finance/date";
 import { totalInterest } from "@/lib/finance/amortization";
 import { remainingPrincipal } from "@/lib/server/transactions";
-import { scheduleRowFromDb } from "@/lib/server/debts";
+import { debtPayoffTimeline, scheduleRowFromDb } from "@/lib/server/debts";
 import { AppHeader, Page } from "@/components/app-header";
 import { DebtDetail } from "./debt-detail";
 
@@ -17,6 +17,7 @@ export default async function DebtPage({ params, searchParams }: { params: Promi
   if (!debt) notFound();
   const remaining = await remainingPrincipal(db, id);
   const unpaid = debt.schedule.filter((r) => r.status !== "paid");
+  const timeline = await debtPayoffTimeline(id);
   const paidInterest = await db.transaction.aggregate({ where: { debtId: id, deletedAt: null, type: "debt_payment" }, _sum: { amount: true, principalAmount: true } });
   return (
     <>
@@ -24,6 +25,7 @@ export default async function DebtPage({ params, searchParams }: { params: Promi
       <Page>
         <DebtDetail
           payScheduleId={Number((await searchParams).bayar) || null}
+          timeline={timeline}
           d={{
             id,
             name: debt.name,

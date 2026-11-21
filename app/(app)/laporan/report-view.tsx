@@ -113,6 +113,7 @@ export function ReportView({ d, tab }: { d: ReportData; tab: Tab }) {
               </>
             )}
           </Card>
+          <CompareCard c={d.compare} />
           <Card>
             <SectionTitle title="Tren 12 bulan" />
             <Select className="mb-2" value={d.trendCat ?? ""} onChange={(e) => go("cat", e.target.value)}>
@@ -197,5 +198,50 @@ export function ReportView({ d, tab }: { d: ReportData; tab: Tab }) {
         <a href="/api/export/transactions" className="mt-2 block text-center text-caption font-semibold text-primary">Unduh semua transaksi (CSV)</a>
       </Card>
     </>
+  );
+}
+
+/** Kategori: siklus ini vs siklus lalu vs rata-rata 3 siklus. Naik = merah, turun = hijau. */
+function CompareCard({ c }: { c: ReportData["compare"] }) {
+  const total = c.rows.reduce((a, r) => ({ current: a.current + r.current, previous: a.previous + r.previous, average: a.average + r.average }), { current: 0, previous: 0, average: 0 });
+  const totalChange = total.average > 0 ? (total.current - total.average) / total.average : null;
+  return (
+    <Card>
+      <SectionTitle title="Dibanding siklus sebelumnya" />
+      {c.progress && (
+        <p className="-mt-1 mb-2 rounded-btn bg-bg px-3 py-2 text-caption text-muted">
+          Siklus berjalan hari ke-{c.progress.day} dari {c.progress.days}. Angka siklus ini belum final.
+        </p>
+      )}
+      {c.rows.length === 0 ? (
+        <p className="py-4 text-center text-caption text-muted">Belum ada pengeluaran untuk dibandingkan.</p>
+      ) : (
+        <ul className="divide-y divide-border/70">
+          <CompareRow name="Total" current={total.current} previous={total.previous} average={total.average} change={totalChange} bold />
+          {c.rows.map((r) => <CompareRow key={r.id} name={r.name} color={r.color} current={r.current} previous={r.previous} average={r.average} change={r.change} />)}
+        </ul>
+      )}
+      <p className="mt-2 text-caption text-muted">Persentase = siklus ini dibanding rata-rata 3 siklus sebelumnya.</p>
+    </Card>
+  );
+}
+
+function CompareRow({ name, color, current, previous, average, change, bold }: { name: string; color?: string | null; current: number; previous: number; average: number; change: number | null; bold?: boolean }) {
+  const up = change !== null && change > 0.1;
+  const down = change !== null && change < -0.1;
+  return (
+    <li className="py-2">
+      <div className="flex items-center gap-2 text-[14px]">
+        {color !== undefined && <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: color ?? "var(--text-muted)" }} />}
+        <span className={`min-w-0 flex-1 truncate ${bold ? "font-bold" : ""}`}>{name}</span>
+        <Money value={current} short className={bold ? "font-bold" : "font-semibold"} />
+        <span className={`w-16 shrink-0 rounded-full px-1.5 py-0.5 text-center text-[11px] font-bold ${up ? "bg-expense/15 text-expense" : down ? "bg-income/15 text-income" : "bg-bg text-muted"}`}>
+          {change === null ? "baru" : `${change > 0 ? "▲" : change < 0 ? "▼" : ""} ${formatPercent(Math.abs(change))}`}
+        </span>
+      </div>
+      <div className={`text-caption text-muted ${color !== undefined ? "pl-5" : ""}`}>
+        lalu <Money value={previous} short /> · rata² 3 siklus <Money value={average} short />
+      </div>
+    </li>
   );
 }

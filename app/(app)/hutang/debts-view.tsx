@@ -3,10 +3,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { deleteReceivableAction, receivablePaymentAction, saveReceivableAction } from "@/lib/actions/finance";
-import { formatDate, formatShortDate, todayJakarta } from "@/lib/finance/date";
+import { formatDate, formatMonthYear, formatShortDate, todayJakarta } from "@/lib/finance/date";
+import type { PayoffPoint } from "@/lib/finance/payoff";
 import { formatPercent, formatRateBp } from "@/lib/finance/money";
 import { DEBT_TYPE_LABEL, INTEREST_TYPE_LABEL } from "@/lib/utils";
 import { DebtForm } from "@/components/debt-form";
+import { CountdownChip, PayoffChart } from "@/components/payoff-chart";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Card, SectionTitle } from "@/components/ui/card";
@@ -27,7 +29,7 @@ interface Summary {
 }
 interface Receivable { id: number; debtorName: string; amount: number; paid: number; date: string; promisedDate: string | null; status: string; note: string | null }
 
-export function DebtsView({ s, income, receivables, openNew, paidOff }: { s: Summary; income: number; receivables: Receivable[]; openNew: boolean; paidOff: { id: number; name: string; principal: number }[] }) {
+export function DebtsView({ s, income, receivables, openNew, paidOff, timeline }: { s: Summary; income: number; receivables: Receivable[]; openNew: boolean; paidOff: { id: number; name: string; principal: number }[]; timeline: PayoffPoint[] }) {
   const [open, setOpen] = useState(openNew);
   const [rv, setRv] = useState<null | "new" | Receivable>(null);
   const router = useRouter();
@@ -87,6 +89,7 @@ export function DebtsView({ s, income, receivables, openNew, paidOff }: { s: Sum
           </Link>
         ))
       )}
+      {s.items.length > 0 && <PayoffJourney items={s.items} timeline={timeline} />}
       {paidOff.length > 0 && (
         <details className="rounded-card bg-surface p-4 shadow-card">
           <summary className="cursor-pointer text-[14px] font-semibold">Sudah lunas ({paidOff.length}) 🎉</summary>
@@ -171,5 +174,33 @@ function ReceivableSheet({ r, onClose }: { r: Receivable | "new" | null; onClose
         </>
       )}
     </BottomSheet>
+  );
+}
+
+/** Grafik sisa pokok + urutan hutang yang lunas lebih dulu. */
+function PayoffJourney({ items, timeline }: { items: Summary["items"]; timeline: PayoffPoint[] }) {
+  const today = todayJakarta();
+  const order = items.filter((d) => d.endDate).sort((a, b) => a.endDate!.localeCompare(b.endDate!));
+  return (
+    <Card>
+      <SectionTitle title="Perjalanan bebas hutang" />
+      <PayoffChart points={timeline} />
+      <p className="mb-3 mt-1 text-caption text-muted">Garis tegas = sisa pokok tercatat. Putus-putus = proyeksi bila cicilan dibayar sesuai jadwal.</p>
+      <div className="mb-1 text-[14px] font-semibold">Urutan lunas</div>
+      <ol className="divide-y divide-border/70">
+        {order.map((d, i) => (
+          <li key={d.id}>
+            <Link href={`/hutang/${d.id}`} className="flex min-h-[52px] items-center gap-3 py-2">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[13px] font-bold text-primary">{i + 1}</span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[14px] font-semibold">{d.name}</div>
+                <div className="text-caption text-muted">Lunas {formatMonthYear(d.endDate!)} · sisa <Money value={d.remaining} short /></div>
+              </div>
+              <CountdownChip endDate={d.endDate!} today={today} />
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </Card>
   );
 }

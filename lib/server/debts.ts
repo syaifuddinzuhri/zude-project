@@ -1,7 +1,8 @@
 import "server-only";
 import { z } from "zod";
 import { db, n, type Tx } from "@/lib/db";
-import { fromDate, todayJakarta, toDate } from "@/lib/finance/date";
+import { fromDate, minDate, todayJakarta, toDate } from "@/lib/finance/date";
+import { payoffTimeline } from "@/lib/finance/payoff";
 import {
   applyExtraPayment,
   buildSchedule,
@@ -322,6 +323,32 @@ export async function debtSummary(monthlyIncome: number) {
     });
   }
   return { total, monthly, dsr: debtServiceRatio(monthly, monthlyIncome), freeDate, items };
+}
+
+/** Garis waktu sisa pokok: semua hutang aktif, atau satu hutang bila `debtId` diisi. */
+export async function debtPayoffTimeline(debtId?: number) {
+  const debts = await db.debt.findMany({
+    where: debtId ? { id: debtId } : { status: "active" },
+    select: { id: true, principal: true, openingPaidPrincipal: true, createdAt: true, schedule: { where: { status: { not: "paid" } }, select: { dueDate: true, principalPart: true } } },
+  });
+  if (debts.length === 0) return [];
+  const pays = await db.transaction.findMany({
+    where: { debtId: { in: debts.map((d) => d.id) }, type: "debt_payment", deletedAt: null, status: "realized" },
+    select: { debtId: true, date: true, principalAmount: true },
+  });
+  return payoffTimeline(
+    debts.map((d) => {
+      const payments = pays.filter((p) => p.debtId === d.id).map((p) => ({ date: fromDate(p.date), principal: n(p.principalAmount) }));
+      const created = todayJakarta(d.createdAt);
+      return {
+        trackFrom: payments.reduce((a, p) => minDate(a, p.date), created),
+        base: n(d.principal) - n(d.openingPaidPrincipal),
+        payments,
+        unpaid: d.schedule.map((r) => ({ due: fromDate(r.dueDate), principal: n(r.principalPart) })),
+      };
+    }),
+    todayJakarta(),
+  );
 }
 
 export { fromRow as scheduleRowFromDb };

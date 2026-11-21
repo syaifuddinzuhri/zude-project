@@ -1,7 +1,7 @@
 import "server-only";
 import { db, n } from "@/lib/db";
-import { toDate } from "@/lib/finance/date";
-import { topWithOthers, ratioBreakdown, savingsRate } from "@/lib/finance/report";
+import { diffDays, todayJakarta, toDate } from "@/lib/finance/date";
+import { compareCategories, topWithOthers, ratioBreakdown, savingsRate } from "@/lib/finance/report";
 import { emergencyCoverage } from "@/lib/finance/goals";
 import type { Period } from "@/lib/finance/cycle";
 import { periodTotals, spendingByParent, goalSavedTotals } from "./stats";
@@ -30,6 +30,19 @@ export async function reportData(offset: number, categoryId: number | null) {
       return { id, name: c?.name ?? "?", value, color: c?.color };
     }),
   );
+
+  // Bandingkan dengan siklus lalu & rata-rata 3 siklus sebelumnya
+  const history = await Promise.all([1, 2, 3].map(async (k) => (await spendingByParent(periodOf(s, undefined, offset - k))).byParent));
+  const today = todayJakarta();
+  const inProgress = today >= period.start && today <= period.end;
+  const compare = {
+    rows: compareCategories(byParent, history).map((r) => {
+      const c = cats.find((x) => x.id === r.id);
+      return { ...r, name: c?.name ?? "?", color: c?.color ?? null };
+    }),
+    // Siklus berjalan: angka "ini" belum final, jadi tampilkan sudah berapa hari berjalan
+    progress: inProgress ? { day: diffDays(period.start, today) + 1, days: diffDays(period.start, period.end) + 1 } : null,
+  };
 
   const first = donut[0] as { id?: number } | undefined;
   const trendCat = categoryId ?? first?.id ?? null;
@@ -82,6 +95,7 @@ export async function reportData(offset: number, categoryId: number | null) {
     donutTotal: donut.reduce((a, d) => a + d.value, 0),
     trend,
     trendCat,
+    compare,
     categories: cats.filter((c) => c.parentId === null).map((c) => ({ id: c.id, name: c.name })),
     ratio: { ...ratio, raw: nat, target: { needs: s.ratioNeeds / 100, wants: s.ratioWants / 100, savings_debt: s.ratioSavings / 100 } },
     savingsRate: savingsRate(totals.income, totals.savings + totals.debtPrincipal),

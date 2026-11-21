@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { changeRateAction, deleteDebtAction, extraPaymentAction, payInstallmentAction, previewExtraAction, updateDebtAction } from "@/lib/actions/finance";
 import { formatDate, formatShortDate, todayJakarta } from "@/lib/finance/date";
+import type { PayoffPoint } from "@/lib/finance/payoff";
 import { formatPercent, formatRateBp, formatRp } from "@/lib/finance/money";
 import { DEBT_TYPE_LABEL, INTEREST_TYPE_LABEL } from "@/lib/utils";
 import { useOwnerName } from "@/components/app-data";
 import { useAppData } from "@/components/app-data";
 import { Confetti } from "@/components/confetti";
+import { CountdownChip, PayoffChart } from "@/components/payoff-chart";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,7 +29,7 @@ interface D {
 }
 interface Row { id: number; no: number; due: string; principal: number; interest: number; total: number; remaining: number; status: string; txId: number | null }
 
-export function DebtDetail({ d, schedule, payScheduleId }: { d: D; schedule: Row[]; payScheduleId: number | null }) {
+export function DebtDetail({ d, schedule, payScheduleId, timeline }: { d: D; schedule: Row[]; payScheduleId: number | null; timeline: PayoffPoint[] }) {
   const app = useAppData();
   const { name } = useOwnerName();
   const toast = useToast();
@@ -100,7 +102,12 @@ export function DebtDetail({ d, schedule, payScheduleId }: { d: D; schedule: Row
           <div>Sisa bunga<br /><Money value={d.remainingInterest} short className="text-[14px] font-bold text-text" /></div>
         </div>
         {d.status === "paid_off" && <div className="mt-3 rounded-btn bg-income/15 px-3 py-2 text-center font-semibold text-income">Lunas 🎉</div>}
-        {schedule.at(-1) && d.status !== "paid_off" && <div className="mt-2 text-caption text-muted">Perkiraan lunas {formatDate(schedule.at(-1)!.due)}</div>}
+        {schedule.at(-1) && d.status !== "paid_off" && (
+          <div className="mt-2 flex items-center justify-between gap-2 text-caption text-muted">
+            <span>Perkiraan lunas {formatDate(schedule.at(-1)!.due)}</span>
+            <CountdownChip endDate={schedule.at(-1)!.due} today={todayJakarta()} />
+          </div>
+        )}
         {d.note && (
           <div className="mt-3 flex gap-2 rounded-btn bg-bg px-3 py-2 text-[13px] text-muted">
             <Icon name="file-text" size={16} className="mt-0.5 shrink-0" />
@@ -108,6 +115,14 @@ export function DebtDetail({ d, schedule, payScheduleId }: { d: D; schedule: Row
           </div>
         )}
       </Card>
+
+      {timeline.length > 1 && (
+        <Card>
+          <div className="mb-1 text-[14px] font-semibold">Sisa pokok per bulan</div>
+          <PayoffChart points={timeline} height={160} />
+          <p className="mt-1 text-caption text-muted">Garis tegas = tercatat. Putus-putus = proyeksi sesuai jadwal.</p>
+        </Card>
+      )}
 
       {d.status !== "paid_off" && (
         <div className="grid grid-cols-2 gap-2">
