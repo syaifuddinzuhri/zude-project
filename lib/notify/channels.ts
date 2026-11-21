@@ -7,12 +7,25 @@ import type { Delivery, NotificationChannel } from "./types";
 import { inQuietHours, quietEndAt } from "./quiet";
 import { nowTimeJakarta } from "@/lib/finance/date";
 
+/**
+ * Apple (web.push.apple.com) menolak JWT VAPID dengan 403 BadJwtToken bila `sub`
+ * bukan mailto/https yang valid, termasuk `mailto:…@localhost`. FCM tidak peduli.
+ * Jadi abaikan subject localhost/kosong dan pakai APP_URL (https) sebagai gantinya.
+ */
+function vapidSubject() {
+  const env = process.env.VAPID_SUBJECT?.trim();
+  if (env && /^(mailto:[^@\s]+@[^@\s]+\.[^@\s]+|https:\/\/\S+)$/.test(env) && !/localhost/i.test(env)) return env;
+  const app = process.env.APP_URL?.trim();
+  if (app?.startsWith("https://") && !/localhost/i.test(app)) return app.replace(/\/+$/, "");
+  return env || "mailto:admin@example.com";
+}
+
 let vapidReady: boolean | null = null;
 function ensureVapid(): boolean {
   if (vapidReady !== null) return vapidReady;
   const pub = process.env.VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT || "mailto:admin@localhost";
+  const subject = vapidSubject();
   if (!pub || !priv) return (vapidReady = false);
   webpush.setVapidDetails(subject, pub, priv); // tandai siap hanya bila berhasil
   return (vapidReady = true);
@@ -59,7 +72,8 @@ export async function deliverPush(notificationId: number) {
       delivered = true;
       await db.pushSubscription.update({ where: { id: s.id }, data: { lastSuccessAt: new Date(), failedCount: 0 } });
     } catch (e: unknown) {
-      const status = (e as { statusCode?: number }).statusCode;
+      const { statusCode: status, body: reason } = e as { statusCode?: number; body?: string };
+      console.warn(`[push] gagal ke ${new URL(s.endpoint).host} (#${s.id}): ${status ?? "?"} ${reason ?? (e instanceof Error ? e.message : "")}`.trim());
       if (status === 404 || status === 410) {
         await db.pushSubscription.delete({ where: { id: s.id } }).catch(() => {});
       } else {
