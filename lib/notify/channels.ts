@@ -1,5 +1,6 @@
 import "server-only";
-import webpush from "web-push";
+// web-push v4 adalah ESM tanpa default export: `import webpush from` menghasilkan undefined
+import * as webpush from "web-push";
 import nodemailer, { type Transporter } from "nodemailer";
 import { db } from "@/lib/db";
 import type { Delivery, NotificationChannel } from "./types";
@@ -12,9 +13,9 @@ function ensureVapid(): boolean {
   const pub = process.env.VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT || "mailto:admin@localhost";
-  vapidReady = Boolean(pub && priv);
-  if (vapidReady) webpush.setVapidDetails(subject, pub!, priv!);
-  return vapidReady;
+  if (!pub || !priv) return (vapidReady = false);
+  webpush.setVapidDetails(subject, pub, priv); // tandai siap hanya bila berhasil
+  return (vapidReady = true);
 }
 
 /** Notifikasi di website (ikon lonceng). Baris dibuat oleh dispatcher; kanal ini tidak perlu kerja tambahan. */
